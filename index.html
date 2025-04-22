@@ -48,7 +48,7 @@
 
     async function loadForecast(lat, lon, name) {
       const res = await fetch(
-        `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
+        `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
       );
       const data = await res.json();
       const forecastEl = document.getElementById("forecast");
