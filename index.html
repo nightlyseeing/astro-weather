@@ -1,118 +1,97 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Počasí a Seeing Předpověď</title>
-    <style>
-        body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
-        .forecast { margin-top: 20px; }
-        .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
-        input, button { padding: 8px; margin-top: 10px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Počasí a Seeing Předpověď</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
+    .forecast { margin-top: 20px; }
+    .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+    input, button { padding: 8px; margin-top: 10px; }
+  </style>
 </head>
 <body>
-    <h1>Počasí a Seeing Předpověď</h1>
+  <h1>Počasí a Seeing Předpověď</h1>
 
-    <label for="city">Zadej město:</label>
-    <input type="text" id="city" placeholder="např. Praha">
-    <button id="forecastButton">Zobrazit aktuální počasí</button>
+  <label for="city">Zadej město:</label>
+  <input type="text" id="city" placeholder="např. Praha">
+  <button id="forecastButton">Zobrazit aktuální počasí</button>
 
-    <div id="forecast" class="forecast"></div>
+  <div id="forecast" class="forecast"></div>
 
-    <script>
-        const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
+  <script>
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
 
-        // Funkce pro hodnocení kvality seeingu
-        function seeingQuality(clouds) {
-            if (clouds < 20) return "Výborné podmínky 🌟";
-            if (clouds < 50) return "Průměrné podmínky 🌤️";
-            return "Nevhodné pro pozorování ☁️";
+    // Funkce pro hodnocení kvality seeingu
+    function seeingQuality(clouds) {
+      if (clouds < 20) return "Výborné podmínky 🌟";
+      if (clouds < 50) return "Průměrné podmínky 🌤️";
+      return "Nevhodné pro pozorování ☁️";
+    }
+
+    // Funkce pro získání souřadnic města
+    async function getCoordinates() {
+      const city = document.getElementById("city").value.trim();
+      if (!city) return alert("Zadej název města!");
+
+      try {
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
+        const data = await res.json();
+        if (!data[0]) return alert("Město nenalezeno");
+
+        const { lat, lon, name } = data[0];
+        loadWeather(lat, lon, name);
+      } catch (error) {
+        alert("Chyba při získávání souřadnic.");
+        console.error(error);
+      }
+    }
+
+    // Funkce pro načtení aktuálního počasí
+    async function loadWeather(lat, lon, name) {
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=cz`
+        );
+
+        if (!res.ok) {
+          alert("Chyba při načítání dat: " + res.statusText);
+          return;
         }
 
-        // Funkce pro získání souřadnic města
-        async function getCoordinates() {
-            const city = document.getElementById("city").value.trim();
-            if (!city) return alert("Zadej název města!");
+        const data = await res.json();
 
-            try {
-                const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
-                const data = await res.json();
-                if (!data[0]) return alert("Město nenalezeno");
-
-                const { lat, lon, name } = data[0];
-                loadWeather(lat, lon, name);
-            } catch (error) {
-                alert("Chyba při získávání souřadnic.");
-                console.error(error);
-            }
+        if (!data.weather) {
+          alert("Nepodařilo se načíst aktuální počasí.");
+          return;
         }
 
-        // Funkce pro načtení aktuálního počasí a předpovědi na 2 dny
-        async function loadWeather(lat, lon, name) {
-            try {
-                const res = await fetch(
-                    `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,alerts&appid=${apiKey}&units=metric&lang=cz`
-                );
+        const forecastEl = document.getElementById("forecast");
+        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
 
-                if (!res.ok) {
-                    alert("Chyba při načítání dat: " + res.statusText);
-                    return;
-                }
+        const weather = data.weather[0].description;
+        const temperature = data.main.temp;
+        const clouds = data.clouds.all;
+        const seeing = seeingQuality(clouds);
 
-                const data = await res.json();
+        forecastEl.innerHTML += `
+          <div class="day">
+            <h3>Aktuální stav</h3>
+            <p><strong>Počasí:</strong> ${weather}</p>
+            <p><strong>Teplota:</strong> ${temperature}°C</p>
+            <p><strong>Oblačnost:</strong> ${clouds}%</p>
+            <p><strong>Seeing:</strong> ${seeing}</p>
+          </div>
+        `;
+      } catch (error) {
+        alert("Chyba při načítání aktuálních dat.");
+        console.error(error);
+      }
+    }
 
-                if (!data.daily) {
-                    alert("Nepodařilo se načíst denní předpověď.");
-                    return;
-                }
-
-                const forecastEl = document.getElementById("forecast");
-                forecastEl.innerHTML = `<h2>Počasí a předpověď pro ${name}</h2>`;
-
-                // Aktuální počasí
-                const currentWeather = data.current.weather[0].description;
-                const temperature = data.current.temp;
-                const cloudsCurrent = data.current.clouds; // Používám jinou proměnnou pro odlišení
-
-                forecastEl.innerHTML += `
-                    <div class="day">
-                        <h3>Aktuální stav</h3>
-                        <p><strong>Počasí:</strong> ${currentWeather}</p>
-                        <p><strong>Teplota:</strong> ${temperature}°C</p>
-                        <p><strong>Oblačnost:</strong> ${cloudsCurrent}%</p>
-                        <p><strong>Seeing:</strong> ${seeingQuality(cloudsCurrent)}</p>
-                    </div>
-                `;
-
-                // Předpověď na 2 dny
-                for (let i = 0; i < 2; i++) {
-                    const day = data.daily[i];
-                    const date = new Date(day.dt * 1000).toLocaleDateString("cs-CZ");
-                    const weather = day.weather[0].description;
-                    const tempMin = day.temp.min;
-                    const tempMax = day.temp.max;
-                    const clouds = day.clouds;
-
-                    forecastEl.innerHTML += `
-                        <div class="day">
-                            <h3>${date}</h3>
-                            <p><strong>Počasí:</strong> ${weather}</p>
-                            <p><strong>Min. teplota:</strong> ${tempMin}°C</p>
-                            <p><strong>Max. teplota:</strong> ${tempMax}°C</p>
-                            <p><strong>Oblačnost:</strong> ${clouds}%</p>
-                            <p><strong>Seeing:</strong> ${seeingQuality(clouds)}</p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                alert("Chyba při načítání aktuálních dat.");
-                console.error(error);
-            }
-        }
-
-        // Přidání event listeneru pro tlačítko
-        document.getElementById("forecastButton").addEventListener("click", getCoordinates);
-    </script>
+    // Přidání event listeneru pro tlačítko
+    document.getElementById("forecastButton").addEventListener("click", getCoordinates);
+  </script>
 </body>
 </html>
