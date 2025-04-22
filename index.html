@@ -49,7 +49,7 @@
     async function loadForecast(lat, lon, name) {
       try {
         const res = await fetch(
-          `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
+          `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
         );
 
         if (!res.ok) {
@@ -67,29 +67,4 @@
         const forecastEl = document.getElementById("forecast");
         forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>`;
 
-        data.daily.slice(0, 5).forEach(day => {
-          const date = new Date(day.dt * 1000).toLocaleDateString("cs-CZ");
-          const cloudiness = day.clouds;
-          const temperature = day.temp.day;
-
-          const seeing = seeingQuality(cloudiness);
-
-          const dayDiv = document.createElement("div");
-          dayDiv.className = "day";
-          dayDiv.innerHTML = `
-            <h3>${date}</h3>
-            <p><strong>Teplota:</strong> ${temperature}°C</p>
-            <p><strong>Oblačnost:</strong> ${cloudiness}%</p>
-            <p><strong>Seeing:</strong> ${seeing}</p>
-          `;
-
-          forecastEl.appendChild(dayDiv);
-        });
-      } catch (error) {
-        alert("Chyba při načítání předpovědi.");
-        console.error(error);
-      }
-    }
-  </script>
-</body>
-</html>
+        data.daily.slice(0, 5).forEach(day =>
