@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Astronomická předpověď</title>
+  <title>Počasí a Seeing Předpověď</title>
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
     .forecast { margin-top: 20px; }
@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h1>Seeing + Fáze Měsíce</h1>
+  <h1>Počasí a Seeing Předpověď</h1>
 
   <label for="city">Zadej město:</label>
   <input type="text" id="city" placeholder="např. Praha">
@@ -21,19 +21,7 @@
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";
-
-    function moonPhaseName(phase) {
-      if (phase === 0 || phase === 1) return "Nov";
-      if (phase > 0 && phase < 0.25) return "Dorůstající srpek";
-      if (phase === 0.25) return "První čtvrť";
-      if (phase > 0.25 && phase < 0.5) return "Dorůstající Měsíc";
-      if (phase === 0.5) return "Úplněk";
-      if (phase > 0.5 && phase < 0.75) return "Couvající Měsíc";
-      if (phase === 0.75) return "Poslední čtvrť";
-      if (phase > 0.75 && phase < 1) return "Ubývající srpek";
-      return "Neznámá fáze";
-    }
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
 
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
@@ -60,11 +48,10 @@
 
     async function loadForecast(lat, lon, name) {
       try {
-  const res = await fetch(
-  `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=cz`
-);
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
+        );
 
-        
         if (!res.ok) {
           alert("Chyba při načítání dat: " + res.statusText);
           return;
@@ -83,16 +70,17 @@
         data.daily.slice(0, 5).forEach(day => {
           const date = new Date(day.dt * 1000).toLocaleDateString("cs-CZ");
           const cloudiness = day.clouds;
-          const moonPhase = moonPhaseName(day.moon_phase);
+          const temperature = day.temp.day;
+
           const seeing = seeingQuality(cloudiness);
 
           const dayDiv = document.createElement("div");
           dayDiv.className = "day";
           dayDiv.innerHTML = `
             <h3>${date}</h3>
+            <p><strong>Teplota:</strong> ${temperature}°C</p>
             <p><strong>Oblačnost:</strong> ${cloudiness}%</p>
             <p><strong>Seeing:</strong> ${seeing}</p>
-            <p><strong>Fáze Měsíce:</strong> ${moonPhase}</p>
           `;
 
           forecastEl.appendChild(dayDiv);
