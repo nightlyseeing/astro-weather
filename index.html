@@ -21,54 +21,85 @@
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const apiKey = "365461721d8f9f7caa7c1460f8181f3d"; // <- sem vlož svůj klíč z OWM
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";
 
     function moonPhaseName(phase) {
       if (phase === 0 || phase === 1) return "Nov";
-      if (phase < 0.25) return "Dorůstající srpek";
+      if (phase > 0 && phase < 0.25) return "Dorůstající srpek";
       if (phase === 0.25) return "První čtvrť";
-      if (phase < 0.5) return "Dorůstající Měsíc";
+      if (phase > 0.25 && phase < 0.5) return "Dorůstající Měsíc";
       if (phase === 0.5) return "Úplněk";
-      if (phase < 0.75) return "Couvající Měsíc";
+      if (phase > 0.5 && phase < 0.75) return "Couvající Měsíc";
       if (phase === 0.75) return "Poslední čtvrť";
-      return "Ubývající srpek";
+      if (phase > 0.75 && phase < 1) return "Ubývající srpek";
+      return "Neznámá fáze";
+    }
+
+    function seeingQuality(clouds) {
+      if (clouds < 20) return "Výborné podmínky 🌟";
+      if (clouds < 50) return "Průměrné podmínky 🌤️";
+      return "Nevhodné pro pozorování ☁️";
     }
 
     async function getCoordinates() {
-      const city = document.getElementById("city").value;
+      const city = document.getElementById("city").value.trim();
       if (!city) return alert("Zadej název města!");
 
-      const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
-      const data = await res.json();
-      if (!data[0]) return alert("Město nenalezeno");
+      try {
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
+        const data = await res.json();
+        if (!data[0]) return alert("Město nenalezeno");
 
-      const { lat, lon, name } = data[0];
-      loadForecast(lat, lon, name);
+        const { lat, lon, name } = data[0];
+        loadForecast(lat, lon, name);
+      } catch (error) {
+        alert("Chyba při získávání souřadnic.");
+        console.error(error);
+      }
     }
 
     async function loadForecast(lat, lon, name) {
-      const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
-      );
-      const data = await res.json();
-      const forecastEl = document.getElementById("forecast");
-      forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>`;
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
+        );
+        
+        if (!res.ok) {
+          alert("Chyba při načítání dat: " + res.statusText);
+          return;
+        }
 
-      data.daily.slice(0, 5).forEach(day => {
-        const date = new Date(day.dt * 1000).toLocaleDateString("cs-CZ");
-        const cloudiness = day.clouds;
-        const moonPhase = moonPhaseName(day.moon_phase);
+        const data = await res.json();
 
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "day";
-        dayDiv.innerHTML = `
-          <h3>${date}</h3>
-          <p><strong>Oblačnost:</strong> ${cloudiness}%</p>
-          <p><strong>Fáze Měsíce:</strong> ${moonPhase}</p>
-        `;
+        if (!data.daily) {
+          alert("Nepodařilo se načíst denní předpověď.");
+          return;
+        }
 
-        forecastEl.appendChild(dayDiv);
-      });
+        const forecastEl = document.getElementById("forecast");
+        forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>`;
+
+        data.daily.slice(0, 5).forEach(day => {
+          const date = new Date(day.dt * 1000).toLocaleDateString("cs-CZ");
+          const cloudiness = day.clouds;
+          const moonPhase = moonPhaseName(day.moon_phase);
+          const seeing = seeingQuality(cloudiness);
+
+          const dayDiv = document.createElement("div");
+          dayDiv.className = "day";
+          dayDiv.innerHTML = `
+            <h3>${date}</h3>
+            <p><strong>Oblačnost:</strong> ${cloudiness}%</p>
+            <p><strong>Seeing:</strong> ${seeing}</p>
+            <p><strong>Fáze Měsíce:</strong> ${moonPhase}</p>
+          `;
+
+          forecastEl.appendChild(dayDiv);
+        });
+      } catch (error) {
+        alert("Chyba při načítání předpovědi.");
+        console.error(error);
+      }
     }
   </script>
 </body>
