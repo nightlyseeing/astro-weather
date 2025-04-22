@@ -48,11 +48,11 @@
       }
     }
 
-    // Funkce pro načtení aktuálního počasí
+    // Funkce pro načtení aktuálního počasí a předpovědi na 2 dny
     async function loadWeather(lat, lon, name) {
       try {
         const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=cz`
+          `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
         );
 
         if (!res.ok) {
@@ -62,22 +62,5 @@
 
         const data = await res.json();
 
-        if (!data.weather) {
-          alert("Nepodařilo se načíst aktuální počasí.");
-          return;
-        }
-
-        const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
-
-        const weather = data.weather[0].description;
-        const temperature = data.main.temp;
-        const clouds = data.clouds.all;
-        const seeing = seeingQuality(clouds);
-
-        forecastEl.innerHTML += `
-          <div class="day">
-            <h3>Aktuální stav</h3>
-            <p><strong>Počasí:</strong> ${weather}</p>
-            <p><strong>Teplota:</strong> ${temperature}°C</p>
-            <p><strong>Oblačnost:</
+        if (!data.daily) {
+          alert("Nepodařilo se načíst denní předpověď.");
