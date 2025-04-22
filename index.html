@@ -60,9 +60,10 @@
 
     async function loadForecast(lat, lon, name) {
       try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=hourly,minutely,current,alerts&appid=${apiKey}&units=metric&lang=cz`
-        );
+  const res = await fetch(
+  `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=cz`
+);
+
         
         if (!res.ok) {
           alert("Chyba při načítání dat: " + res.statusText);
