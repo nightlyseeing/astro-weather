@@ -21,58 +21,42 @@
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const apiKey = "365461721d8f9f7caa7c1460f8181f3d"; // Tvůj API klíč
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
 
+    // Funkce pro hodnocení kvality seeingu
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
       if (clouds < 50) return "Průměrné podmínky 🌤️";
       return "Nevhodné pro pozorování ☁️";
     }
 
-    function getMoonPhase(date = new Date()) {
-      const lp = 2551443; // délka lunárního cyklu v sekundách
-      const now = date.getTime() / 1000;
-      const newMoon = new Date('2001-01-01T00:00:00Z').getTime() / 1000;
-      const phase = ((now - newMoon) % lp) / lp;
-
-      if (phase < 0.03 || phase > 0.97) return { name: "Nov", icon: "🌑" };
-      if (phase < 0.22) return { name: "Dorůstající srpek", icon: "🌒" };
-      if (phase < 0.28) return { name: "První čtvrť", icon: "🌓" };
-      if (phase < 0.47) return { name: "Dorůstající měsíc", icon: "🌔" };
-      if (phase < 0.53) return { name: "Úplněk", icon: "🌕" };
-      if (phase < 0.72) return { name: "Couvající měsíc", icon: "🌖" };
-      if (phase < 0.78) return { name: "Poslední čtvrť", icon: "🌗" };
-      return { name: "Couvající srpek", icon: "🌘" };
-    }
-
+    // Funkce pro získání souřadnic města
     async function getCoordinates() {
       const city = document.getElementById("city").value.trim();
       if (!city) return alert("Zadej název města!");
 
       try {
-        console.log("Získávám souřadnice pro město:", city);
         const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
         const data = await res.json();
-        console.log("Geolokace API odpověď:", data);
         if (!data[0]) return alert("Město nenalezeno");
 
         const { lat, lon, name } = data[0];
         loadWeather(lat, lon, name);
+        getVisiblePlanets(lat, lon);  // Přidání volání funkce pro viditelné planety
       } catch (error) {
         alert("Chyba při získávání souřadnic.");
         console.error(error);
       }
     }
 
+    // Funkce pro načtení aktuálního počasí
     async function loadWeather(lat, lon, name) {
       try {
-        console.log(`Načítám počasí pro ${lat}, ${lon}`);
         const res = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=cz`
         );
 
         const data = await res.json();
-        console.log("Počasí API odpověď:", data);
 
         const forecastEl = document.getElementById("forecast");
         forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
@@ -81,7 +65,6 @@
         const temperature = data.main.temp;
         const clouds = data.clouds.all;
         const seeing = seeingQuality(clouds);
-        const moonPhase = getMoonPhase();
 
         const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
         const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
@@ -92,7 +75,6 @@
             <p><strong>Teplota:</strong> ${temperature}°C</p>
             <p><strong>Oblačnost:</strong> ${clouds}%</p>
             <p><strong>Seeing:</strong> ${seeing}</p>
-            <p><strong>Fáze měsíce:</strong> ${moonPhase.icon} ${moonPhase.name}</p>
             <p><strong>Východ slunce:</strong> ${sunrise}</p>
             <p><strong>Západ slunce:</strong> ${sunset}</p>
           </div>
@@ -103,6 +85,29 @@
       }
     }
 
+    // Funkce pro získání viditelných planet
+    async function getVisiblePlanets(lat, lon) {
+      try {
+        const response = await fetch(`https://visible-planets-api.fly.dev/planets?latitude=${lat}&longitude=${lon}&aboveHorizon=true`);
+        const data = await response.json();
+        const forecastEl = document.getElementById("forecast");
+        if (data.length > 0) {
+          forecastEl.innerHTML += `<h3>Viditelné planety</h3><ul>`;
+          data.forEach(planet => {
+            forecastEl.innerHTML += `
+              <li><strong>${planet.name}</strong>: Východ v ${planet.rise}, Západ v ${planet.set}</li>
+            `;
+          });
+          forecastEl.innerHTML += `</ul>`;
+        } else {
+          forecastEl.innerHTML += `<p>Žádné planety nejsou aktuálně viditelné.</p>`;
+        }
+      } catch (error) {
+        console.error("Chyba při načítání dat o viditelných planetách:", error);
+      }
+    }
+
+    // Přidání event listeneru pro tlačítko
     document.getElementById("forecastButton").addEventListener("click", getCoordinates);
   </script>
 </body>
