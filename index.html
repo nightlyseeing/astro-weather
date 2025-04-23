@@ -9,8 +9,7 @@
     .forecast { margin-top: 20px; }
     .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
     input, button { padding: 8px; margin-top: 10px; }
-    .moon-calendar { margin-top: 20px; padding: 10px; background: #1a1a1a; border-radius: 8px; }
-    .moon-day { margin-bottom: 5px; }
+    .planet-visibility { background: #1a1a1a; padding: 10px; border-radius: 8px; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -23,7 +22,7 @@
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d"; // Vlož svůj vlastní API klíč
 
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
@@ -47,11 +46,48 @@
       return { name: "Couvající srpek", icon: "🌘" };
     }
 
-    function generateMoonCalendar(days = 7) {
-      const today = new Date();
-      let calendarHtml = `<div class="moon-calendar"><h3>Lunární kalendář</h3>`;
-      for (let i = 0; i < days; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        const moon = getMoonPhase(date);
-        const dateStr = date.toLocaleDateString("cs-CZ", { weekday: 'short', day: 'numeric',
+    async function getCoordinates() {
+      const city = document.getElementById("city").value.trim();
+      if (!city) return alert("Zadej název města!");
+
+      try {
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
+        const data = await res.json();
+        if (!data[0]) return alert("Město nenalezeno");
+
+        const { lat, lon, name } = data[0];
+        loadWeather(lat, lon, name);
+      } catch (error) {
+        alert("Chyba při získávání souřadnic.");
+        console.error(error);
+      }
+    }
+
+    async function loadWeather(lat, lon, name) {
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=cz`
+        );
+
+        if (!res.ok) {
+          alert("Chyba při načítání dat: " + res.statusText);
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!data.weather) {
+          alert("Nepodařilo se načíst aktuální počasí.");
+          return;
+        }
+
+        const forecastEl = document.getElementById("forecast");
+        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
+
+        const weather = data.weather[0].description;
+        const temperature = data.main.temp;
+        const clouds = data.clouds.all;
+        const seeing = seeingQuality(clouds);
+        const moonPhase = getMoonPhase();
+
+        const sunrise
