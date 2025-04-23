@@ -9,6 +9,8 @@
     .forecast { margin-top: 20px; }
     .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
     input, button { padding: 8px; margin-top: 10px; }
+    .moon-calendar { margin-top: 20px; padding: 10px; background: #1a1a1a; border-radius: 8px; }
+    .moon-day { margin-bottom: 5px; }
   </style>
 </head>
 <body>
@@ -29,9 +31,8 @@
       return "Nevhodné pro pozorování ☁️";
     }
 
-    // Funkce pro výpočet fáze měsíce s emoji
     function getMoonPhase(date = new Date()) {
-      const lp = 2551443; // délka lunárního cyklu v sekundách
+      const lp = 2551443;
       const now = date.getTime() / 1000;
       const newMoon = new Date('2001-01-01T00:00:00Z').getTime() / 1000;
       const phase = ((now - newMoon) % lp) / lp;
@@ -46,67 +47,11 @@
       return { name: "Couvající srpek", icon: "🌘" };
     }
 
-    async function getCoordinates() {
-      const city = document.getElementById("city").value.trim();
-      if (!city) return alert("Zadej název města!");
-
-      try {
-        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
-        const data = await res.json();
-        if (!data[0]) return alert("Město nenalezeno");
-
-        const { lat, lon, name } = data[0];
-        loadWeather(lat, lon, name);
-      } catch (error) {
-        alert("Chyba při získávání souřadnic.");
-        console.error(error);
-      }
-    }
-
-    async function loadWeather(lat, lon, name) {
-      try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=cz`
-        );
-
-        if (!res.ok) {
-          alert("Chyba při načítání dat: " + res.statusText);
-          return;
-        }
-
-        const data = await res.json();
-
-        if (!data.weather) {
-          alert("Nepodařilo se načíst aktuální počasí.");
-          return;
-        }
-
-        const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
-
-        const weather = data.weather[0].description;
-        const temperature = data.main.temp;
-        const clouds = data.clouds.all;
-        const seeing = seeingQuality(clouds);
-        const moonPhase = getMoonPhase();
-
-        forecastEl.innerHTML += `
-          <div class="day">
-            <h3>Aktuální stav</h3>
-            <p><strong>Počasí:</strong> ${weather}</p>
-            <p><strong>Teplota:</strong> ${temperature}°C</p>
-            <p><strong>Oblačnost:</strong> ${clouds}%</p>
-            <p><strong>Seeing:</strong> ${seeing}</p>
-            <p><strong>Fáze měsíce:</strong> ${moonPhase.icon} ${moonPhase.name}</p>
-          </div>
-        `;
-      } catch (error) {
-        alert("Chyba při načítání aktuálních dat.");
-        console.error(error);
-      }
-    }
-
-    document.getElementById("forecastButton").addEventListener("click", getCoordinates);
-  </script>
-</body>
-</html>
+    function generateMoonCalendar(days = 7) {
+      const today = new Date();
+      let calendarHtml = `<div class="moon-calendar"><h3>Lunární kalendář</h3>`;
+      for (let i = 0; i < days; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const moon = getMoonPhase(date);
+        const dateStr = date.toLocaleDateString("cs-CZ", { weekday: 'short', day: 'numeric',
