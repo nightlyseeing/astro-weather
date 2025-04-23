@@ -21,16 +21,31 @@
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";
 
-    // Funkce pro hodnocení kvality seeingu
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
       if (clouds < 50) return "Průměrné podmínky 🌤️";
       return "Nevhodné pro pozorování ☁️";
     }
 
-    // Funkce pro získání souřadnic města
+    // Funkce pro výpočet fáze měsíce s emoji
+    function getMoonPhase(date = new Date()) {
+      const lp = 2551443; // délka lunárního cyklu v sekundách
+      const now = date.getTime() / 1000;
+      const newMoon = new Date('2001-01-01T00:00:00Z').getTime() / 1000;
+      const phase = ((now - newMoon) % lp) / lp;
+
+      if (phase < 0.03 || phase > 0.97) return { name: "Nov", icon: "🌑" };
+      if (phase < 0.22) return { name: "Dorůstající srpek", icon: "🌒" };
+      if (phase < 0.28) return { name: "První čtvrť", icon: "🌓" };
+      if (phase < 0.47) return { name: "Dorůstající měsíc", icon: "🌔" };
+      if (phase < 0.53) return { name: "Úplněk", icon: "🌕" };
+      if (phase < 0.72) return { name: "Couvající měsíc", icon: "🌖" };
+      if (phase < 0.78) return { name: "Poslední čtvrť", icon: "🌗" };
+      return { name: "Couvající srpek", icon: "🌘" };
+    }
+
     async function getCoordinates() {
       const city = document.getElementById("city").value.trim();
       if (!city) return alert("Zadej název města!");
@@ -48,7 +63,6 @@
       }
     }
 
-    // Funkce pro načtení aktuálního počasí
     async function loadWeather(lat, lon, name) {
       try {
         const res = await fetch(
@@ -74,6 +88,7 @@
         const temperature = data.main.temp;
         const clouds = data.clouds.all;
         const seeing = seeingQuality(clouds);
+        const moonPhase = getMoonPhase();
 
         forecastEl.innerHTML += `
           <div class="day">
@@ -82,6 +97,7 @@
             <p><strong>Teplota:</strong> ${temperature}°C</p>
             <p><strong>Oblačnost:</strong> ${clouds}%</p>
             <p><strong>Seeing:</strong> ${seeing}</p>
+            <p><strong>Fáze měsíce:</strong> ${moonPhase.icon} ${moonPhase.name}</p>
           </div>
         `;
       } catch (error) {
@@ -90,7 +106,6 @@
       }
     }
 
-    // Přidání event listeneru pro tlačítko
     document.getElementById("forecastButton").addEventListener("click", getCoordinates);
   </script>
 </body>
