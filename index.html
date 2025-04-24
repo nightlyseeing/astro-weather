@@ -13,12 +13,16 @@
       text-align: center;
     }
 
-    .forecast {
-      margin-top: 20px;
-      text-align: left;
+    .forecast, #map, canvas, iframe#sky-map {
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
+      border-radius: 8px;
+    }
+
+    .forecast {
+      text-align: left;
+      margin-top: 20px;
     }
 
     .day {
@@ -38,30 +42,38 @@
       height: 40px;
     }
 
+    .day p {
+      font-size: 0.95em;
+      font-weight: normal;
+      margin: 6px 0;
+    }
+
+    .day h3 {
+      margin-top: 20px;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+
     #map {
-      height: 300px;
-      width: 400px;
-      margin: 20px auto;
-      border-radius: 8px;
+      height: 450px;
+      width: 100%;
+      margin-top: 30px;
     }
 
     canvas {
-      width: 400px !important;
-      height: 300px !important;
+      width: 100% !important;
+      height: 450px !important;
       background: #222;
-      border-radius: 8px;
-      margin: 20px auto;
+      margin-top: 20px;
       display: block;
     }
 
     iframe#sky-map {
       border: none;
       width: 100%;
-      max-width: 800px;
       height: 450px;
-      margin: 30px auto;
+      margin-top: 30px;
       display: block;
-      border-radius: 8px;
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -75,7 +87,7 @@
 
   <div id="forecast" class="forecast"></div>
   <div id="map"></div>
-  <canvas id="moonChart" width="400" height="300"></canvas>
+  <canvas id="moonChart" width="600" height="450"></canvas>
 
   <h2>🌌 Interaktivní noční obloha</h2>
   <iframe id="sky-map" src="https://stellarium-web.org/embed/index.html?lat=50.0755&lon=14.4378&date=now"></iframe>
@@ -148,16 +160,16 @@
         forecastEl.innerHTML += `
           <div class="day">
             <h3>🌀 Aktuální počasí</h3>
-            <p><strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
-            <p><strong>Teplota:</strong> ${temperature}°C</p>
-            <p><strong>Oblačnost:</strong> ${clouds}%</p>
+            <p>🌤️ <strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
+            <p>🌡️ <strong>Teplota:</strong> ${temperature}°C</p>
+            <p>☁️ <strong>Oblačnost:</strong> ${clouds}%</p>
 
             <h3>🔭 Seeing</h3>
-            <p><strong>Podmínky pro pozorování:</strong> ${seeing}</p>
+            <p>👁️ <strong>Podmínky pro pozorování:</strong> ${seeing}</p>
 
             <h3>☀️ Slunce</h3>
-            <p><strong>Východ slunce:</strong> ${sunrise}</p>
-            <p><strong>Západ slunce:</strong> ${sunset}</p>
+            <p>🌅 <strong>Východ slunce:</strong> ${sunrise}</p>
+            <p>🌇 <strong>Západ slunce:</strong> ${sunset}</p>
 
             <h3>🌕 Měsíc</h3>
             <div id="moonInfo"></div>
@@ -180,11 +192,11 @@
         const illumination = Math.max(0, parseFloat(data.moon_illumination_percentage)) || 0;
 
         moonInfo.innerHTML = `
-          <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
-          <p><strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
-          <p><strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
-          <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
-          <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
+          <p>🌘 <strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
+          <p>💡 <strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
+          <p>📏 <strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
+          <p>🌙 <strong>Východ Měsíce:</strong> ${data.moonrise}</p>
+          <p>🌒 <strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
 
         drawIlluminationChart([
