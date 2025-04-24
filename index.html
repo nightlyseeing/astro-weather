@@ -67,7 +67,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-  <h1>Počasí a Astronomická Předpověď</h1>
+  <h1>🌠 Astronomická Předpověď</h1>
 
   <label for="city">Zadej město:</label>
   <input type="text" id="city" placeholder="např. Praha">
@@ -134,7 +134,7 @@
         const data = await res.json();
 
         const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
+        forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>`;
 
         const weather = data.weather[0].description;
         const icon = data.weather[0].icon;
@@ -147,12 +147,19 @@
 
         forecastEl.innerHTML += `
           <div class="day">
-            <p><strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png"></p>
+            <h3>🌀 Aktuální počasí</h3>
+            <p><strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
             <p><strong>Teplota:</strong> ${temperature}°C</p>
             <p><strong>Oblačnost:</strong> ${clouds}%</p>
-            <p><strong>Seeing:</strong> ${seeing}</p>
+
+            <h3>🔭 Seeing</h3>
+            <p><strong>Podmínky pro pozorování:</strong> ${seeing}</p>
+
+            <h3>☀️ Slunce</h3>
             <p><strong>Východ slunce:</strong> ${sunrise}</p>
             <p><strong>Západ slunce:</strong> ${sunset}</p>
+
+            <h3>🌕 Měsíc</h3>
             <div id="moonInfo"></div>
           </div>
         `;
