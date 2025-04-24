@@ -46,18 +46,8 @@
     }
 
     function getMoonImageUrl(phase) {
-      const map = {
-        "NEW_MOON": "phase-new",
-        "WAXING_CRESCENT": "phase-waxing-crescent",
-        "FIRST_QUARTER": "phase-first-quarter",
-        "WAXING_GIBBOUS": "phase-waxing-gibbous",
-        "FULL_MOON": "phase-full",
-        "WANING_GIBBOUS": "phase-waning-gibbous",
-        "LAST_QUARTER": "phase-last-quarter",
-        "WANING_CRESCENT": "phase-waning-crescent"
-      };
-      const file = map[phase];
-      return file ? `https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/${file}.png` : "";
+      const kebab = phase.toLowerCase().replace(/_/g, "-");
+      return `https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-${kebab}.png`;
     }
 
     async function getCoordinates() {
@@ -131,7 +121,8 @@
         const moonImage = getMoonImageUrl(data.moon_phase);
 
         moonInfo.innerHTML = `
-          <p><strong>Fáze Měsíce:</strong> ${translatedPhase} (${data.moon_illumination_percentage} %)</p>
+          <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
+          <p><strong>Osvětlení Měsíce:</strong> ${data.moon_illumination_percentage} %</p>
           <img class="icon" src="${moonImage}" alt="${translatedPhase}">
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
@@ -143,10 +134,7 @@
 
     async function getVisiblePlanets(lat, lon) {
       try {
-        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-        const apiUrl = `https://visible-planets-api.fly.dev/planets?latitude=${lat}&longitude=${lon}&aboveHorizon=true`;
-
-        const response = await fetch(proxyUrl + apiUrl);
+        const response = await fetch(`https://visible-planets-api.fly.dev/planets?latitude=${lat}&longitude=${lon}&aboveHorizon=true`);
         const data = await response.json();
 
         const forecastEl = document.getElementById("forecast");
