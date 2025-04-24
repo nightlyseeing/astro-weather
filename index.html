@@ -61,6 +61,9 @@
       font-size: 0.95em;
       font-weight: normal;
       margin: 6px 0;
+      background: #333;
+      padding: 8px 10px;
+      border-radius: 6px;
     }
 
     img.icon {
@@ -242,7 +245,7 @@
 
     function showMap(lat, lon) {
       if (!map) {
-        map = L.map("map").setView([lat, lon], 7); // Zvýšeno přiblížení na 7
+        map = L.map("map").setView([lat, lon], 7);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
         sunMarker = L.marker([lat, lon]).addTo(map).bindPopup("Tvoje poloha");
       } else {
