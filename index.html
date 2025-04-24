@@ -44,7 +44,7 @@
     .right-column {
       flex: 1 1 500px;
       max-width: 600px;
-      align-self: flex-start;
+      position: relative;
     }
 
     .forecast {
@@ -81,6 +81,7 @@
       width: 100%;
       height: 450px;
       border-radius: 8px;
+      transition: margin-top 0.3s ease;
     }
 
     canvas {
@@ -199,6 +200,9 @@
             <div id="moonInfo"></div>
           </div>
         `;
+
+        // Zarovná mapu s prvním .day blokem vlevo
+        alignMapToFirstDay();
       } catch (error) {
         alert("Chyba při načítání počasí.");
         console.error(error);
@@ -262,6 +266,19 @@
       } else {
         map.setView([lat, lon], 7);
         sunMarker.setLatLng([lat, lon]);
+      }
+    }
+
+    function alignMapToFirstDay() {
+      const firstDay = document.querySelector(".left-column .day");
+      const mapEl = document.getElementById("map");
+
+      if (firstDay && mapEl) {
+        const leftTop = firstDay.getBoundingClientRect().top;
+        const rightTop = document.querySelector(".right-column").getBoundingClientRect().top;
+        const offset = leftTop - rightTop;
+
+        mapEl.style.marginTop = `${offset}px`;
       }
     }
 
