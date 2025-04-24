@@ -78,7 +78,7 @@
   <canvas id="moonChart" width="400" height="300"></canvas>
 
   <h2>🌌 Interaktivní noční obloha</h2>
-  <iframe id="sky-map" src="https://stellarium-web.org/embed/index.html?lat=50.0755&lon=14.4378"></iframe>
+  <iframe id="sky-map" src="https://stellarium-web.org/embed/index.html?lat=50.0755&lon=14.4378&date=now"></iframe>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -86,7 +86,7 @@
     const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d";
     const moonApiKey = "781aa2d69af74745906e01cc68c84207";
 
-    let map, moonMarker, sunMarker;
+    let map, sunMarker;
 
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
@@ -180,10 +180,10 @@
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
 
-        drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
-
-        if (moonMarker) moonMarker.remove();
-        moonMarker = L.marker([lat + 0.5, lon + 0.5]).addTo(map).bindPopup("Měsíc");
+        drawIlluminationChart([
+          illumination - 15, illumination - 10, illumination - 5,
+          illumination, illumination - 3, illumination + 2, illumination
+        ]);
       } catch (error) {
         console.error("Chyba při načítání Měsíce:", error);
       }
@@ -227,7 +227,7 @@
 
     function updateSkyMap(lat, lon) {
       const iframe = document.getElementById("sky-map");
-      iframe.src = `https://stellarium-web.org/embed/index.html?lat=${lat}&lon=${lon}`;
+      iframe.src = `https://stellarium-web.org/embed/index.html?lat=${lat}&lon=${lon}&date=now`;
     }
 
     document.getElementById("forecastButton").addEventListener("click", getCoordinates);
