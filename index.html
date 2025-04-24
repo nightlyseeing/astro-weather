@@ -242,11 +242,11 @@
 
     function showMap(lat, lon) {
       if (!map) {
-        map = L.map("map").setView([lat, lon], 5);
+        map = L.map("map").setView([lat, lon], 7); // Zvýšeno přiblížení na 7
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
         sunMarker = L.marker([lat, lon]).addTo(map).bindPopup("Tvoje poloha");
       } else {
-        map.setView([lat, lon], 5);
+        map.setView([lat, lon], 7);
         sunMarker.setLatLng([lat, lon]);
       }
     }
