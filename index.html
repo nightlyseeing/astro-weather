@@ -72,6 +72,12 @@
       border-radius: 6px;
     }
 
+    .highlight {
+      background-color: #2e7d32 !important;
+      color: #b9f6ca;
+      font-weight: bold;
+    }
+
     img.icon {
       vertical-align: middle;
       height: 40px;
@@ -119,11 +125,16 @@
     const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d";
     const moonApiKey = "781aa2d69af74745906e01cc68c84207";
     let map, sunMarker;
+    let cachedClouds = null;
 
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
       if (clouds < 50) return "Průměrné podmínky 🌤️";
       return "Nevhodné pro pozorování ☁️";
+    }
+
+    function idealConditions(clouds, illumination) {
+      return clouds < 10 && illumination < 15;
     }
 
     function translateMoonPhase(phase) {
@@ -171,8 +182,9 @@
         const icon = data.weather[0].icon;
         const temperature = data.main.temp;
         const clouds = data.clouds.all;
-        const seeing = seeingQuality(clouds);
+        cachedClouds = clouds;
 
+        const seeing = seeingQuality(clouds);
         const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
         const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
 
@@ -184,9 +196,9 @@
             <p>☁️ <strong>Oblačnost:</strong> ${clouds}%</p>
           </div>
 
-          <div class="day">
+          <div id="seeingBlock" class="day">
             <h3>🔭 Seeing</h3>
-            <p>👁️ <strong>Podmínky pro pozorování:</strong> ${seeing}</p>
+            <p><strong>Podmínky pro pozorování:</strong> ${seeing}</p>
           </div>
 
           <div class="day">
@@ -225,6 +237,12 @@
           <p>🌙 <strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p>🌒 <strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
+
+        // Extra zvýraznění v sekci seeing
+        const seeingBlock = document.getElementById("seeingBlock");
+        if (cachedClouds !== null && idealConditions(cachedClouds, illumination)) {
+          seeingBlock.innerHTML += `<p class="highlight">✅ Dnes ideální podmínky pro pozorování!</p>`;
+        }
 
         drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
       } catch (error) {
