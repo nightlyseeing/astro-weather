@@ -136,53 +136,11 @@
         const data = await res.json();
         if (!data[0]) return alert("Město nenalezeno");
         const { lat, lon, name } = data[0];
-        loadWeather(lat, lon, name);
-        getMoonPhase(lat, lon);
+        await getMoonPhase(lat, lon);
+        await loadWeather(lat, lon, name);
         showMap(lat, lon);
       } catch (error) {
         alert("Chyba při získávání souřadnic.");
-        console.error(error);
-      }
-    }
-
-    async function loadWeather(lat, lon, name) {
-      try {
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`);
-        const data = await res.json();
-        const weather = data.weather[0].description;
-        const icon = data.weather[0].icon;
-        const temperature = data.main.temp;
-        const clouds = data.clouds.all;
-        cachedClouds = clouds;
-        const seeing = seeingQuality(clouds);
-        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
-        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
-        const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>
-          <div class="day">
-            <h3>🌀 Aktuální počasí</h3>
-            <p>🌤️ <strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
-            <p>🌡️ <strong>Teplota:</strong> ${temperature}°C</p>
-            <p>☁️ <strong>Oblačnost:</strong> ${clouds}%</p>
-          </div>
-          <div id="seeingBlock" class="day">
-            <h3>🔭 Seeing</h3>
-            <p class="seeing-result ${seeing.class}">👁️ <strong>${seeing.label}</strong></p>
-          </div>
-          <div class="day">
-            <h3>☀️ Slunce</h3>
-            <p>🌅 <strong>Východ slunce:</strong> ${sunrise}</p>
-            <p>🌇 <strong>Západ slunce:</strong> ${sunset}</p>
-            <p>🕯️ <strong>Začátek tmy:</strong> ${astronomicalTwilight.end}</p>
-            <p>🌅 <strong>Konec tmy:</strong> ${astronomicalTwilight.begin}</p>
-          </div>
-          <div class="day">
-            <h3>🌕 Měsíc</h3>
-            <div id="moonInfo"></div>
-          </div>`;
-        alignMapToFirstDay();
-      } catch (error) {
-        alert("Chyba při načítání počasí.");
         console.error(error);
       }
     }
@@ -193,46 +151,47 @@
         const data = await res.json();
         astronomicalTwilight.begin = data.astronomical_twilight_begin;
         astronomicalTwilight.end = data.astronomical_twilight_end;
-        const moonInfo = document.getElementById("moonInfo");
-        const illumination = Math.max(0, parseFloat(data.moon_illumination_percentage)) || 0;
-        moonInfo.innerHTML = `
-          <p>🌘 <strong>Fáze Měsíce:</strong> ${data.moon_phase}</p>
-          <p>💡 <strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
-          <p>📏 <strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
-          <p>🌙 <strong>Východ Měsíce:</strong> ${data.moonrise}</p>
-          <p>🌒 <strong>Západ Měsíce:</strong> ${data.moonset}</p>`;
-        if (cachedClouds !== null && idealConditions(cachedClouds, illumination)) {
-          document.getElementById("seeingBlock").innerHTML += `<p class="highlight">✅ Výjimečně ideální podmínky pro pozorování!</p>`;
-        }
-        drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
       } catch (error) {
-        console.error("Chyba při načítání Měsíce:", error);
+        console.error("Chyba při načítání údajů o soumraku:", error);
       }
     }
 
-    function drawIlluminationChart(dataPoints) {
-      const ctx = document.getElementById("moonChart").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: ["-6 dní", "-5", "-4", "Dnes", "-2", "-1", "Zítra"],
-          datasets: [{
-            label: "Osvětlení Měsíce (%)",
-            data: dataPoints,
-            borderColor: "lightblue",
-            backgroundColor: "rgba(173, 216, 230, 0.2)"
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              suggestedMin: 0,
-              suggestedMax: 100
-            }
-          }
-        }
-      });
+    async function loadWeather(lat, lon, name) {
+      const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`);
+      const data = await res.json();
+
+      const forecastEl = document.getElementById("forecast");
+      forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>`;
+
+      const weather = data.weather[0].description;
+      const icon = data.weather[0].icon;
+      const temperature = data.main.temp;
+      const clouds = data.clouds.all;
+      cachedClouds = clouds;
+
+      const seeing = seeingQuality(clouds);
+      const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
+      const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
+
+      forecastEl.innerHTML += `
+        <div class="day">
+          <h3>🌀 Aktuální počasí</h3>
+          <p>🌤️ <strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
+          <p>🌡️ <strong>Teplota:</strong> ${temperature}°C</p>
+          <p>☁️ <strong>Oblačnost:</strong> ${clouds}%</p>
+        </div>
+        <div class="day">
+          <h3>🔭 Seeing</h3>
+          <p class="seeing-result ${seeing.class}">👁️ <strong>${seeing.label}</strong></p>
+        </div>
+        <div class="day">
+          <h3>☀️ Slunce</h3>
+          <p>🌅 <strong>Východ slunce:</strong> ${sunrise}</p>
+          <p>🌇 <strong>Západ slunce:</strong> ${sunset}</p>
+          <p>🕯️ <strong>Začátek tmy:</strong> ${astronomicalTwilight.end || "není dostupné"}</p>
+          <p>🌅 <strong>Konec tmy:</strong> ${astronomicalTwilight.begin || "není dostupné"}</p>
+        </div>
+      `;
     }
 
     function showMap(lat, lon) {
@@ -243,17 +202,6 @@
       } else {
         map.setView([lat, lon], 7);
         sunMarker.setLatLng([lat, lon]);
-      }
-    }
-
-    function alignMapToFirstDay() {
-      const firstDay = document.querySelector(".left-column .day");
-      const mapEl = document.getElementById("map");
-      if (firstDay && mapEl) {
-        const leftTop = firstDay.getBoundingClientRect().top;
-        const rightTop = document.querySelector(".right-column").getBoundingClientRect().top;
-        const offset = leftTop - rightTop;
-        mapEl.style.marginTop = `${offset}px`;
       }
     }
 
