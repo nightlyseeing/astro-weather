@@ -78,7 +78,7 @@
   <canvas id="moonChart" width="400" height="300"></canvas>
 
   <h2>🌌 Interaktivní noční obloha</h2>
-  <iframe id="sky-map" src="https://stellarium-web.org/skysource?date=now&lat=50.0755&lon=14.4378&constellations=true&planets=true&stars=true"></iframe>
+  <iframe id="sky-map" src="https://stellarium-web.org/embed/index.html?lat=50.0755&lon=14.4378"></iframe>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -174,7 +174,7 @@
 
         moonInfo.innerHTML = `
           <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
-          <p><strong>Osvětlení:</strong> ${illumination} %</p>
+          <p><strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
           <p><strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
@@ -227,7 +227,7 @@
 
     function updateSkyMap(lat, lon) {
       const iframe = document.getElementById("sky-map");
-      iframe.src = `https://stellarium-web.org/skysource?date=now&lat=${lat}&lon=${lon}&constellations=true&planets=true&stars=true`;
+      iframe.src = `https://stellarium-web.org/embed/index.html?lat=${lat}&lon=${lon}`;
     }
 
     document.getElementById("forecastButton").addEventListener("click", getCoordinates);
