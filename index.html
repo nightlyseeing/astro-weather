@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Počasí a Astronomická Předpověď</title>
+  <title>Astronomická Předpověď</title>
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
     .forecast { margin-top: 20px; }
     .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
     input, button { padding: 8px; margin-top: 10px; }
     img.icon { vertical-align: middle; height: 40px; }
+    #map { height: 300px; margin-top: 20px; border-radius: 8px; }
+    canvas { background: #222; border-radius: 8px; margin-top: 20px; }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
   <h1>Počasí a Astronomická Předpověď</h1>
@@ -20,10 +23,16 @@
   <button id="forecastButton">Zobrazit aktuální předpověď</button>
 
   <div id="forecast" class="forecast"></div>
+  <div id="map"></div>
+  <canvas id="moonChart" width="400" height="200"></canvas>
 
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d";
     const moonApiKey = "781aa2d69af74745906e01cc68c84207";
+
+    let map, moonMarker, sunMarker;
 
     function seeingQuality(clouds) {
       if (clouds < 20) return "Výborné podmínky 🌟";
@@ -61,8 +70,9 @@
 
         const { lat, lon, name } = data[0];
         loadWeather(lat, lon, name);
-        getVisiblePlanets(lat, lon);
         getMoonPhase(lat, lon);
+        getVisiblePlanets(lat, lon);
+        showMap(lat, lon);
       } catch (error) {
         alert("Chyba při získávání souřadnic.");
         console.error(error);
@@ -71,11 +81,9 @@
 
     async function loadWeather(lat, lon, name) {
       try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`
-        );
-
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`);
         const data = await res.json();
+
         const forecastEl = document.getElementById("forecast");
         forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
 
@@ -90,7 +98,7 @@
 
         forecastEl.innerHTML += `
           <div class="day">
-            <p><strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
+            <p><strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png"></p>
             <p><strong>Teplota:</strong> ${temperature}°C</p>
             <p><strong>Oblačnost:</strong> ${clouds}%</p>
             <p><strong>Seeing:</strong> ${seeing}</p>
@@ -100,7 +108,7 @@
           </div>
         `;
       } catch (error) {
-        alert("Chyba při načítání dat o počasí.");
+        alert("Chyba při načítání počasí.");
         console.error(error);
       }
     }
@@ -109,29 +117,56 @@
       try {
         const res = await fetch(`https://api.ipgeolocation.io/astronomy?apiKey=${moonApiKey}&lat=${lat}&long=${lon}`);
         const data = await res.json();
-
         const moonInfo = document.getElementById("moonInfo");
-
-        if (!data || !data.moon_phase) {
-          moonInfo.innerHTML = `<p>Chyba: Data o Měsíci nebyla načtena.</p>`;
-          return;
-        }
 
         const rawPhase = data.moon_phase;
         const translatedPhase = translateMoonPhase(rawPhase);
-        const moonImage = getMoonImageUrl(rawPhase);
         const illumination = Math.max(0, parseFloat(data.moon_illumination_percentage)) || 0;
+        const moonImage = getMoonImageUrl(rawPhase);
 
         moonInfo.innerHTML = `
           <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
-          <p><strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
-          <img class="icon" src="${moonImage}" alt="${translatedPhase}">
+          <p><strong>Osvětlení:</strong> ${illumination} %</p>
+          <p><strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
+          <img class="icon" src="${moonImage}">
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
+
+        // Simulace grafu svítivosti (posledních 7 dnů)
+        drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
+
+        // Zobraz souřadnice Měsíce na mapě
+        if (moonMarker) moonMarker.remove();
+        moonMarker = L.marker([data.moon_altitude, data.moon_azimuth]).addTo(map).bindPopup("Měsíc");
       } catch (error) {
-        console.error("Chyba při načítání dat o Měsíci:", error);
+        console.error("Chyba při načítání Měsíce:", error);
       }
+    }
+
+    function drawIlluminationChart(dataPoints) {
+      const ctx = document.getElementById("moonChart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: ["-6 dní", "-5", "-4", "Dnes", "-2", "-1", "Zítra"],
+          datasets: [{
+            label: "Osvětlení Měsíce (%)",
+            data: dataPoints,
+            borderColor: "lightblue",
+            backgroundColor: "rgba(173, 216, 230, 0.2)"
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              suggestedMin: 0,
+              suggestedMax: 100
+            }
+          }
+        }
+      });
     }
 
     async function getVisiblePlanets(lat, lon) {
@@ -140,7 +175,6 @@
         const data = await res.json();
 
         const forecastEl = document.getElementById("forecast");
-
         if (data && data.length > 0) {
           forecastEl.innerHTML += `<h3>Viditelné planety</h3><ul>`;
           data.forEach(planet => {
@@ -151,7 +185,18 @@
           forecastEl.innerHTML += `<p>Žádné planety nejsou aktuálně viditelné.</p>`;
         }
       } catch (error) {
-        console.error("Chyba při načítání dat o planetách:", error);
+        console.error("Chyba při načítání planet:", error);
+      }
+    }
+
+    function showMap(lat, lon) {
+      if (!map) {
+        map = L.map("map").setView([lat, lon], 5);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+        sunMarker = L.marker([lat, lon]).addTo(map).bindPopup("Tvoje poloha");
+      } else {
+        map.setView([lat, lon], 5);
+        sunMarker.setLatLng([lat, lon]);
       }
     }
 
