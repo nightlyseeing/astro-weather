@@ -126,13 +126,18 @@
       return "Nevhodné pro pozorování ☁️";
     }
 
-    // Mock Bortle scale assignment based on lat/lon and cloudiness
-    function estimateBortleClass(lat, lon, clouds) {
-      // Very basic logic: simulate better skies further from city lat/lon
-      if (clouds > 70) return { value: 9, label: "městské nebe" };
-      if (lat > 50 && lon > 15) return { value: 4, label: "venkovské nebe" };
-      if (lat > 48 && lon < 15) return { value: 5, label: "příměstské nebe" };
-      return { value: 6, label: "světelné znečištění" };
+    function translateMoonPhase(phase) {
+      const phases = {
+        "NEW_MOON": "Nov 🌑",
+        "WAXING_CRESCENT": "Dorůstající srpek 🌒",
+        "FIRST_QUARTER": "První čtvrť 🌓",
+        "WAXING_GIBBOUS": "Dorůstající Měsíc 🌔",
+        "FULL_MOON": "Úplněk 🌕",
+        "WANING_GIBBOUS": "Couvající Měsíc 🌖",
+        "LAST_QUARTER": "Poslední čtvrť 🌗",
+        "WANING_CRESCENT": "Ubývající srpek 🌘"
+      };
+      return phases[phase] || phase;
     }
 
     async function getCoordinates() {
@@ -168,8 +173,6 @@
         const clouds = data.clouds.all;
         const seeing = seeingQuality(clouds);
 
-        const bortle = estimateBortleClass(lat, lon, clouds);
-
         const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
         const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
 
@@ -184,7 +187,6 @@
           <div class="day">
             <h3>🔭 Seeing</h3>
             <p>👁️ <strong>Podmínky pro pozorování:</strong> ${seeing}</p>
-            <p>🌌 <strong>Bortleova třída:</strong> ${bortle.value} (${bortle.label})</p>
           </div>
 
           <div class="day">
