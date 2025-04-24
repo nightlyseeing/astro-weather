@@ -20,11 +20,13 @@
 
     .input-section {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 40px;
+      font-size: 1.2em;
     }
 
     input, button {
-      padding: 8px;
+      padding: 12px 16px;
+      font-size: 1em;
       margin-top: 10px;
     }
 
@@ -104,7 +106,7 @@
   <h1>🌠 Astronomická Předpověď</h1>
 
   <div class="input-section">
-    <label for="city">Zadej město:</label>
+    <label for="city">Zadejte město:</label><br/>
     <input type="text" id="city" placeholder="např. Praha">
     <button id="forecastButton">Zobrazit aktuální předpověď</button>
   </div>
@@ -128,13 +130,13 @@
     let cachedClouds = null;
 
     function seeingQuality(clouds) {
-      if (clouds < 20) return "Výborné podmínky 🌟";
+      if (clouds < 15) return "Výjimečně ideální podmínky 🌌";
       if (clouds < 50) return "Průměrné podmínky 🌤️";
       return "Nevhodné pro pozorování ☁️";
     }
 
     function idealConditions(clouds, illumination) {
-      return clouds < 10 && illumination < 15;
+      return clouds < 15 && illumination < 15;
     }
 
     function translateMoonPhase(phase) {
@@ -238,10 +240,9 @@
           <p>🌒 <strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
 
-        // Extra zvýraznění v sekci seeing
         const seeingBlock = document.getElementById("seeingBlock");
         if (cachedClouds !== null && idealConditions(cachedClouds, illumination)) {
-          seeingBlock.innerHTML += `<p class="highlight">✅ Dnes ideální podmínky pro pozorování!</p>`;
+          seeingBlock.innerHTML += `<p class="highlight">✅ Výjimečně ideální podmínky pro pozorování!</p>`;
         }
 
         drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
