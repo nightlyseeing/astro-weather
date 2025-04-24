@@ -10,8 +10,9 @@
     .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
     input, button { padding: 8px; margin-top: 10px; }
     img.icon { vertical-align: middle; height: 40px; }
-    #map { height: 300px; margin-top: 20px; border-radius: 8px; }
-    canvas { background: #222; border-radius: 8px; margin-top: 20px; }
+    img.moon-icon { height: 80px; display: block; margin: 10px 0; }
+    #map { height: 150px; margin-top: 20px; border-radius: 8px; }
+    canvas { background: #222; border-radius: 8px; margin-top: 20px; width: 100%; height: 150px; }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
@@ -128,17 +129,15 @@
           <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
           <p><strong>Osvětlení:</strong> ${illumination} %</p>
           <p><strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
-          <img class="icon" src="${moonImage}">
+          <img class="moon-icon" src="${moonImage}" alt="${translatedPhase}">
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
 
-        // Simulace grafu svítivosti (posledních 7 dnů)
         drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
 
-        // Zobraz souřadnice Měsíce na mapě
         if (moonMarker) moonMarker.remove();
-        moonMarker = L.marker([data.moon_altitude, data.moon_azimuth]).addTo(map).bindPopup("Měsíc");
+        moonMarker = L.marker([lat + 0.5, lon + 0.5]).addTo(map).bindPopup("Měsíc");
       } catch (error) {
         console.error("Chyba při načítání Měsíce:", error);
       }
