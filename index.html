@@ -117,6 +117,7 @@
     const moonApiKey = "781aa2d69af74745906e01cc68c84207";
     let map, sunMarker, cachedClouds = null;
     let astronomicalTwilight = { begin: "", end: "" };
+    let moonPhaseData = { phase: "", illumination: "" };
 
     function seeingQuality(clouds) {
       if (clouds < 15) return { label: "Výjimečně ideální podmínky 🌌", class: "seeing-ideal" };
@@ -124,8 +125,27 @@
       return { label: "Nevhodné pro pozorování ☁️", class: "seeing-bad" };
     }
 
-    function idealConditions(clouds, illumination) {
-      return clouds < 15 && illumination < 15;
+    function translateMoonPhase(phase) {
+      switch (phase) {
+        case "New Moon":
+          return "Nov 🌑";
+        case "Waxing Crescent":
+          return "Dorůstající srpek 🌒";
+        case "First Quarter":
+          return "První čtvrť 🌓";
+        case "Waxing Gibbous":
+          return "Dorůstající Měsíc 🌔";
+        case "Full Moon":
+          return "Úplněk 🌕";
+        case "Waning Gibbous":
+          return "Couvající Měsíc 🌖";
+        case "Last Quarter":
+          return "Poslední čtvrť 🌗";
+        case "Waning Crescent":
+          return "Couvající srpek 🌘";
+        default:
+          return phase;
+      }
     }
 
     async function getCoordinates() {
@@ -151,8 +171,11 @@
         const data = await res.json();
         astronomicalTwilight.begin = data.astronomical_twilight_begin;
         astronomicalTwilight.end = data.astronomical_twilight_end;
+
+        moonPhaseData.phase = data.moon_phase;
+        moonPhaseData.illumination = data.moon_illumination;
       } catch (error) {
-        console.error("Chyba při načítání údajů o soumraku:", error);
+        console.error("Chyba při načítání údajů o soumraku a Měsíci:", error);
       }
     }
 
@@ -190,6 +213,11 @@
           <p>🌇 <strong>Západ slunce:</strong> ${sunset}</p>
           <p>🕯️ <strong>Začátek tmy:</strong> ${astronomicalTwilight.end || "není dostupné"}</p>
           <p>🌅 <strong>Konec tmy:</strong> ${astronomicalTwilight.begin || "není dostupné"}</p>
+        </div>
+        <div class="day">
+          <h3>🌙 Fáze Měsíce</h3>
+          <p><strong>Fáze:</strong> ${translateMoonPhase(moonPhaseData.phase)}</p>
+          <p><strong>Osvětlení:</strong> ${moonPhaseData.illumination}%</p>
         </div>
       `;
     }
