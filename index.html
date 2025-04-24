@@ -117,12 +117,14 @@
           return;
         }
 
-        const translatedPhase = translateMoonPhase(data.moon_phase);
-        const moonImage = getMoonImageUrl(data.moon_phase);
+        const rawPhase = data.moon_phase;
+        const translatedPhase = translateMoonPhase(rawPhase);
+        const moonImage = getMoonImageUrl(rawPhase);
+        const illumination = Math.max(0, parseFloat(data.moon_illumination_percentage)) || 0;
 
         moonInfo.innerHTML = `
           <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
-          <p><strong>Osvětlení Měsíce:</strong> ${data.moon_illumination_percentage} %</p>
+          <p><strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
           <img class="icon" src="${moonImage}" alt="${translatedPhase}">
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
@@ -134,16 +136,15 @@
 
     async function getVisiblePlanets(lat, lon) {
       try {
-        const response = await fetch(`https://visible-planets-api.fly.dev/planets?latitude=${lat}&longitude=${lon}&aboveHorizon=true`);
-        const data = await response.json();
+        const res = await fetch(`https://visible-planets-api.fly.dev/planets?latitude=${lat}&longitude=${lon}&aboveHorizon=true`);
+        const data = await res.json();
 
         const forecastEl = document.getElementById("forecast");
+
         if (data && data.length > 0) {
           forecastEl.innerHTML += `<h3>Viditelné planety</h3><ul>`;
           data.forEach(planet => {
-            forecastEl.innerHTML += `
-              <li><strong>${planet.name}</strong>: Východ v ${planet.rise}, Západ v ${planet.set}</li>
-            `;
+            forecastEl.innerHTML += `<li><strong>${planet.name}</strong>: Východ v ${planet.rise}, Západ v ${planet.set}</li>`;
           });
           forecastEl.innerHTML += `</ul>`;
         } else {
