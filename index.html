@@ -80,6 +80,22 @@
       font-weight: bold;
     }
 
+    .seeing-result {
+      font-weight: bold;
+    }
+
+    .seeing-ideal {
+      color: #66ff66;
+    }
+
+    .seeing-average {
+      color: #ffcc66;
+    }
+
+    .seeing-bad {
+      color: #ff6666;
+    }
+
     img.icon {
       vertical-align: middle;
       height: 40px;
@@ -130,9 +146,9 @@
     let cachedClouds = null;
 
     function seeingQuality(clouds) {
-      if (clouds < 15) return "Výjimečně ideální podmínky 🌌";
-      if (clouds < 50) return "Průměrné podmínky 🌤️";
-      return "Nevhodné pro pozorování ☁️";
+      if (clouds < 15) return { label: "Výjimečně ideální podmínky 🌌", class: "seeing-ideal" };
+      if (clouds < 50) return { label: "Průměrné podmínky 🌤️", class: "seeing-average" };
+      return { label: "Nevhodné pro pozorování ☁️", class: "seeing-bad" };
     }
 
     function idealConditions(clouds, illumination) {
@@ -200,7 +216,7 @@
 
           <div id="seeingBlock" class="day">
             <h3>🔭 Seeing</h3>
-            <p><strong>Podmínky pro pozorování:</strong> ${seeing}</p>
+            <p class="seeing-result ${seeing.class}">👁️ <strong>${seeing.label}</strong></p>
           </div>
 
           <div class="day">
