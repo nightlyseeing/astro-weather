@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Počasí a Seeing Předpověď</title>
+  <title>Weather and Astronomy Forecast</title>
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
     .forecast { margin-top: 20px; }
@@ -12,61 +12,39 @@
   </style>
 </head>
 <body>
-  <h1>Počasí a Seeing Předpověď</h1>
+  <h1>Weather and Astronomy Forecast</h1>
 
-  <label for="city">Zadej město:</label>
-  <input type="text" id="city" placeholder="např. Praha">
-  <button id="forecastButton">Zobrazit aktuální počasí</button>
+  <label for="city">Enter city:</label>
+  <input type="text" id="city" placeholder="e.g., Prague">
+  <button id="forecastButton">Show current weather</button>
 
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
+    const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d"; // OpenWeatherMap API key
+    const moonApiKey = "781aa2d69af74745906e01cc68c84207"; // Replace with your IPGeolocation Moon API key
 
     function seeingQuality(clouds) {
-      if (clouds < 20) return "Výborné podmínky 🌟";
-      if (clouds < 50) return "Průměrné podmínky 🌤️";
-      return "Nevhodné pro pozorování ☁️";
-    }
-
-    // 🌙 Výpočet fáze měsíce
-    function getMoonPhase() {
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-
-      const c = Math.floor((year - 1900) * 12.3685);
-      const e = new Date(year, month - 1, day);
-      const jd = 2415020 + 29 * c;
-      const daysSinceNew = (e.getTime() - new Date(1900, 0, 1).getTime()) / 86400000 - ((jd - 2415020) % 29.53058867);
-      const phase = daysSinceNew % 29.53058867;
-
-      if (phase < 1.84566) return "Nov 🌑";
-      else if (phase < 5.53699) return "Dorůstající srpek 🌒";
-      else if (phase < 9.22831) return "První čtvrť 🌓";
-      else if (phase < 12.91963) return "Dorůstající Měsíc 🌔";
-      else if (phase < 16.61096) return "Úplněk 🌕";
-      else if (phase < 20.30228) return "Couvající Měsíc 🌖";
-      else if (phase < 23.99361) return "Poslední čtvrť 🌗";
-      else if (phase < 27.68493) return "Ubývající srpek 🌘";
-      else return "Nov 🌑";
+      if (clouds < 20) return "Excellent conditions 🌟";
+      if (clouds < 50) return "Moderate conditions 🌤️";
+      return "Not suitable for observing ☁️";
     }
 
     async function getCoordinates() {
       const city = document.getElementById("city").value.trim();
-      if (!city) return alert("Zadej název města!");
+      if (!city) return alert("Please enter a city name!");
 
       try {
-        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${weatherApiKey}`);
         const data = await res.json();
-        if (!data[0]) return alert("Město nenalezeno");
+        if (!data[0]) return alert("City not found.");
 
         const { lat, lon, name } = data[0];
         loadWeather(lat, lon, name);
         getVisiblePlanets(lat, lon);
+        getMoonPhase(lat, lon);
       } catch (error) {
-        alert("Chyba při získávání souřadnic.");
+        alert("Error fetching coordinates.");
         console.error(error);
       }
     }
@@ -74,38 +52,51 @@
     async function loadWeather(lat, lon, name) {
       try {
         const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=cz`
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=en`
         );
 
         const data = await res.json();
-
         const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
+        forecastEl.innerHTML = `<h2>Current Weather for ${name}</h2>`;
 
         const weather = data.weather[0].description;
         const temperature = data.main.temp;
         const clouds = data.clouds.all;
         const seeing = seeingQuality(clouds);
 
-        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
-        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
-
-        const moonPhase = getMoonPhase(); // 🌙 Fáze měsíce
+        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
 
         forecastEl.innerHTML += `
           <div class="day">
-            <p><strong>Počasí:</strong> ${weather}</p>
-            <p><strong>Teplota:</strong> ${temperature}°C</p>
-            <p><strong>Oblačnost:</strong> ${clouds}%</p>
-            <p><strong>Seeing:</strong> ${seeing}</p>
-            <p><strong>Východ slunce:</strong> ${sunrise}</p>
-            <p><strong>Západ slunce:</strong> ${sunset}</p>
-            <p><strong>Fáze Měsíce:</strong> ${moonPhase}</p>
+            <p><strong>Weather:</strong> ${weather}</p>
+            <p><strong>Temperature:</strong> ${temperature}°C</p>
+            <p><strong>Cloud coverage:</strong> ${clouds}%</p>
+            <p><strong>Seeing conditions:</strong> ${seeing}</p>
+            <p><strong>Sunrise:</strong> ${sunrise}</p>
+            <p><strong>Sunset:</strong> ${sunset}</p>
+            <div id="moonInfo"></div>
           </div>
         `;
       } catch (error) {
-        alert("Chyba při načítání aktuálních dat.");
+        alert("Error loading weather data.");
         console.error(error);
+      }
+    }
+
+    async function getMoonPhase(lat, lon) {
+      try {
+        const res = await fetch(`https://api.ipgeolocation.io/astronomy?apiKey=${moonApiKey}&lat=${lat}&long=${lon}`);
+        const data = await res.json();
+        const moonInfo = document.getElementById("moonInfo");
+
+        moonInfo.innerHTML = `
+          <p><strong>Moon phase:</strong> ${data.moon_phase} (${data.moon_illumination}% illuminated)</p>
+          <p><strong>Moonrise:</strong> ${data.moonrise}</p>
+          <p><strong>Moonset:</strong> ${data.moonset}</p>
+        `;
+      } catch (error) {
+        console.error("Error loading moon phase data:", error);
       }
     }
 
@@ -119,18 +110,18 @@
 
         const forecastEl = document.getElementById("forecast");
         if (data && data.length > 0) {
-          forecastEl.innerHTML += `<h3>Viditelné planety</h3><ul>`;
+          forecastEl.innerHTML += `<h3>Visible Planets</h3><ul>`;
           data.forEach(planet => {
             forecastEl.innerHTML += `
-              <li><strong>${planet.name}</strong>: Východ v ${planet.rise}, Západ v ${planet.set}</li>
+              <li><strong>${planet.name}</strong>: Rise at ${planet.rise}, Set at ${planet.set}</li>
             `;
           });
           forecastEl.innerHTML += `</ul>`;
         } else {
-          forecastEl.innerHTML += `<p>Žádné planety nejsou aktuálně viditelné.</p>`;
+          forecastEl.innerHTML += `<p>No planets are currently visible.</p>`;
         }
       } catch (error) {
-        console.error("Chyba při načítání dat o viditelných planetách:", error);
+        console.error("Error fetching visible planets:", error);
       }
     }
 
