@@ -31,6 +31,35 @@
       return "Nevhodné pro pozorování ☁️";
     }
 
+    function translateMoonPhase(phase) {
+      const phases = {
+        "NEW_MOON": "Nov",
+        "WAXING_CRESCENT": "Dorůstající srpek",
+        "FIRST_QUARTER": "První čtvrť",
+        "WAXING_GIBBOUS": "Dorůstající Měsíc",
+        "FULL_MOON": "Úplněk",
+        "WANING_GIBBOUS": "Couvající Měsíc",
+        "LAST_QUARTER": "Poslední čtvrť",
+        "WANING_CRESCENT": "Ubývající srpek"
+      };
+      return phases[phase] || phase;
+    }
+
+    function getMoonImageUrl(phase) {
+      const map = {
+        "NEW_MOON": "phase-new",
+        "WAXING_CRESCENT": "phase-waxing-crescent",
+        "FIRST_QUARTER": "phase-first-quarter",
+        "WAXING_GIBBOUS": "phase-waxing-gibbous",
+        "FULL_MOON": "phase-full",
+        "WANING_GIBBOUS": "phase-waning-gibbous",
+        "LAST_QUARTER": "phase-last-quarter",
+        "WANING_CRESCENT": "phase-waning-crescent"
+      };
+      const file = map[phase];
+      return file ? `https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/${file}.png` : "";
+    }
+
     async function getCoordinates() {
       const city = document.getElementById("city").value.trim();
       if (!city) return alert("Zadej název města!");
@@ -81,35 +110,29 @@
           </div>
         `;
       } catch (error) {
-        alert("Chyba při načítání aktuálních dat.");
+        alert("Chyba při načítání dat o počasí.");
         console.error(error);
       }
-    }
-
-    function getMoonImageUrl(phase) {
-      const phaseMap = {
-        "New Moon": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-new.png",
-        "Waxing Crescent": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waxing-crescent.png",
-        "First Quarter": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-first-quarter.png",
-        "Waxing Gibbous": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waxing-gibbous.png",
-        "Full Moon": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-full.png",
-        "Waning Gibbous": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waning-gibbous.png",
-        "Last Quarter": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-last-quarter.png",
-        "Waning Crescent": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waning-crescent.png"
-      };
-      return phaseMap[phase] || "";
     }
 
     async function getMoonPhase(lat, lon) {
       try {
         const res = await fetch(`https://api.ipgeolocation.io/astronomy?apiKey=${moonApiKey}&lat=${lat}&long=${lon}`);
         const data = await res.json();
+
         const moonInfo = document.getElementById("moonInfo");
-        const imgUrl = getMoonImageUrl(data.moon_phase);
+
+        if (!data || !data.moon_phase) {
+          moonInfo.innerHTML = `<p>Chyba: Data o Měsíci nebyla načtena.</p>`;
+          return;
+        }
+
+        const translatedPhase = translateMoonPhase(data.moon_phase);
+        const moonImage = getMoonImageUrl(data.moon_phase);
 
         moonInfo.innerHTML = `
-          <p><strong>Fáze Měsíce:</strong> ${data.moon_phase} (${data.moon_illumination} %)</p>
-          <img class="icon" src="${imgUrl}" alt="${data.moon_phase}">
+          <p><strong>Fáze Měsíce:</strong> ${translatedPhase} (${data.moon_illumination_percentage} %)</p>
+          <img class="icon" src="${moonImage}" alt="${translatedPhase}">
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
