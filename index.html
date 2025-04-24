@@ -1,50 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Weather and Astronomy Forecast</title>
+  <title>Počasí a Astronomická Předpověď</title>
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
     .forecast { margin-top: 20px; }
     .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
     input, button { padding: 8px; margin-top: 10px; }
+    img.icon { vertical-align: middle; height: 40px; }
   </style>
 </head>
 <body>
-  <h1>Weather and Astronomy Forecast</h1>
+  <h1>Počasí a Astronomická Předpověď</h1>
 
-  <label for="city">Enter city:</label>
-  <input type="text" id="city" placeholder="e.g., Prague">
-  <button id="forecastButton">Show current weather</button>
+  <label for="city">Zadej město:</label>
+  <input type="text" id="city" placeholder="např. Praha">
+  <button id="forecastButton">Zobrazit aktuální předpověď</button>
 
   <div id="forecast" class="forecast"></div>
 
   <script>
-    const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d"; // OpenWeatherMap API key
-    const moonApiKey = "781aa2d69af74745906e01cc68c84207"; // Replace with your IPGeolocation Moon API key
+    const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d";
+    const moonApiKey = "TVŮJ_KLÍČ_Z_IPGEOLOCATION";
 
     function seeingQuality(clouds) {
-      if (clouds < 20) return "Excellent conditions 🌟";
-      if (clouds < 50) return "Moderate conditions 🌤️";
-      return "Not suitable for observing ☁️";
+      if (clouds < 20) return "Výborné podmínky 🌟";
+      if (clouds < 50) return "Průměrné podmínky 🌤️";
+      return "Nevhodné pro pozorování ☁️";
     }
 
     async function getCoordinates() {
       const city = document.getElementById("city").value.trim();
-      if (!city) return alert("Please enter a city name!");
+      if (!city) return alert("Zadej název města!");
 
       try {
         const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${weatherApiKey}`);
         const data = await res.json();
-        if (!data[0]) return alert("City not found.");
+        if (!data[0]) return alert("Město nenalezeno");
 
         const { lat, lon, name } = data[0];
         loadWeather(lat, lon, name);
         getVisiblePlanets(lat, lon);
         getMoonPhase(lat, lon);
       } catch (error) {
-        alert("Error fetching coordinates.");
+        alert("Chyba při získávání souřadnic.");
         console.error(error);
       }
     }
@@ -52,36 +53,51 @@
     async function loadWeather(lat, lon, name) {
       try {
         const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=en`
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`
         );
 
         const data = await res.json();
         const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Current Weather for ${name}</h2>`;
+        forecastEl.innerHTML = `<h2>Aktuální počasí pro ${name}</h2>`;
 
         const weather = data.weather[0].description;
+        const icon = data.weather[0].icon;
         const temperature = data.main.temp;
         const clouds = data.clouds.all;
         const seeing = seeingQuality(clouds);
 
-        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
-        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
+        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
 
         forecastEl.innerHTML += `
           <div class="day">
-            <p><strong>Weather:</strong> ${weather}</p>
-            <p><strong>Temperature:</strong> ${temperature}°C</p>
-            <p><strong>Cloud coverage:</strong> ${clouds}%</p>
-            <p><strong>Seeing conditions:</strong> ${seeing}</p>
-            <p><strong>Sunrise:</strong> ${sunrise}</p>
-            <p><strong>Sunset:</strong> ${sunset}</p>
+            <p><strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
+            <p><strong>Teplota:</strong> ${temperature}°C</p>
+            <p><strong>Oblačnost:</strong> ${clouds}%</p>
+            <p><strong>Seeing:</strong> ${seeing}</p>
+            <p><strong>Východ slunce:</strong> ${sunrise}</p>
+            <p><strong>Západ slunce:</strong> ${sunset}</p>
             <div id="moonInfo"></div>
           </div>
         `;
       } catch (error) {
-        alert("Error loading weather data.");
+        alert("Chyba při načítání aktuálních dat.");
         console.error(error);
       }
+    }
+
+    function getMoonImageUrl(phase) {
+      const phaseMap = {
+        "New Moon": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-new.png",
+        "Waxing Crescent": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waxing-crescent.png",
+        "First Quarter": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-first-quarter.png",
+        "Waxing Gibbous": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waxing-gibbous.png",
+        "Full Moon": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-full.png",
+        "Waning Gibbous": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waning-gibbous.png",
+        "Last Quarter": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-last-quarter.png",
+        "Waning Crescent": "https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-waning-crescent.png"
+      };
+      return phaseMap[phase] || "";
     }
 
     async function getMoonPhase(lat, lon) {
@@ -89,14 +105,16 @@
         const res = await fetch(`https://api.ipgeolocation.io/astronomy?apiKey=${moonApiKey}&lat=${lat}&long=${lon}`);
         const data = await res.json();
         const moonInfo = document.getElementById("moonInfo");
+        const imgUrl = getMoonImageUrl(data.moon_phase);
 
         moonInfo.innerHTML = `
-          <p><strong>Moon phase:</strong> ${data.moon_phase} (${data.moon_illumination}% illuminated)</p>
-          <p><strong>Moonrise:</strong> ${data.moonrise}</p>
-          <p><strong>Moonset:</strong> ${data.moonset}</p>
+          <p><strong>Fáze Měsíce:</strong> ${data.moon_phase} (${data.moon_illumination} %)</p>
+          <img class="icon" src="${imgUrl}" alt="${data.moon_phase}">
+          <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
+          <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
       } catch (error) {
-        console.error("Error loading moon phase data:", error);
+        console.error("Chyba při načítání dat o Měsíci:", error);
       }
     }
 
@@ -110,18 +128,18 @@
 
         const forecastEl = document.getElementById("forecast");
         if (data && data.length > 0) {
-          forecastEl.innerHTML += `<h3>Visible Planets</h3><ul>`;
+          forecastEl.innerHTML += `<h3>Viditelné planety</h3><ul>`;
           data.forEach(planet => {
             forecastEl.innerHTML += `
-              <li><strong>${planet.name}</strong>: Rise at ${planet.rise}, Set at ${planet.set}</li>
+              <li><strong>${planet.name}</strong>: Východ v ${planet.rise}, Západ v ${planet.set}</li>
             `;
           });
           forecastEl.innerHTML += `</ul>`;
         } else {
-          forecastEl.innerHTML += `<p>No planets are currently visible.</p>`;
+          forecastEl.innerHTML += `<p>Žádné planety nejsou aktuálně viditelné.</p>`;
         }
       } catch (error) {
-        console.error("Error fetching visible planets:", error);
+        console.error("Chyba při načítání dat o planetách:", error);
       }
     }
 
