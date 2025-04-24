@@ -1,11 +1,41 @@
-    // Funkce pro výpočet fáze měsíce podle data
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Počasí a Seeing Předpověď</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
+    .forecast { margin-top: 20px; }
+    .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+    input, button { padding: 8px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Počasí a Seeing Předpověď</h1>
+
+  <label for="city">Zadej město:</label>
+  <input type="text" id="city" placeholder="např. Praha">
+  <button id="forecastButton">Zobrazit aktuální počasí</button>
+
+  <div id="forecast" class="forecast"></div>
+
+  <script>
+    const apiKey = "365461721d8f9f7caa7c1460f8181f3d";  // Tvoje API klíč
+
+    function seeingQuality(clouds) {
+      if (clouds < 20) return "Výborné podmínky 🌟";
+      if (clouds < 50) return "Průměrné podmínky 🌤️";
+      return "Nevhodné pro pozorování ☁️";
+    }
+
+    // 🌙 Výpočet fáze měsíce
     function getMoonPhase() {
       const date = new Date();
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const day = date.getDate();
 
-      // Meeus/Jones/Chapront algorithm - approximation
       const c = Math.floor((year - 1900) * 12.3685);
       const e = new Date(year, month - 1, day);
       const jd = 2415020 + 29 * c;
@@ -23,7 +53,24 @@
       else return "Nov 🌑";
     }
 
-    // Upravená funkce pro načtení aktuálního počasí
+    async function getCoordinates() {
+      const city = document.getElementById("city").value.trim();
+      if (!city) return alert("Zadej název města!");
+
+      try {
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`);
+        const data = await res.json();
+        if (!data[0]) return alert("Město nenalezeno");
+
+        const { lat, lon, name } = data[0];
+        loadWeather(lat, lon, name);
+        getVisiblePlanets(lat, lon);
+      } catch (error) {
+        alert("Chyba při získávání souřadnic.");
+        console.error(error);
+      }
+    }
+
     async function loadWeather(lat, lon, name) {
       try {
         const res = await fetch(
@@ -43,7 +90,7 @@
         const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
         const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
 
-        const moonPhase = getMoonPhase(); // 🌙 Fáze Měsíce
+        const moonPhase = getMoonPhase(); // 🌙 Fáze měsíce
 
         forecastEl.innerHTML += `
           <div class="day">
@@ -53,7 +100,7 @@
             <p><strong>Seeing:</strong> ${seeing}</p>
             <p><strong>Východ slunce:</strong> ${sunrise}</p>
             <p><strong>Západ slunce:</strong> ${sunset}</p>
-            <p><strong>Fáze Měsíce:</strong> ${moonPhase}</p> <!-- 🌙 -->
+            <p><strong>Fáze Měsíce:</strong> ${moonPhase}</p>
           </div>
         `;
       } catch (error) {
@@ -61,3 +108,33 @@
         console.error(error);
       }
     }
+
+    async function getVisiblePlanets(lat, lon) {
+      try {
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+        const apiUrl = `https://visible-planets-api.fly.dev/planets?latitude=${lat}&longitude=${lon}&aboveHorizon=true`;
+
+        const response = await fetch(proxyUrl + apiUrl);
+        const data = await response.json();
+
+        const forecastEl = document.getElementById("forecast");
+        if (data && data.length > 0) {
+          forecastEl.innerHTML += `<h3>Viditelné planety</h3><ul>`;
+          data.forEach(planet => {
+            forecastEl.innerHTML += `
+              <li><strong>${planet.name}</strong>: Východ v ${planet.rise}, Západ v ${planet.set}</li>
+            `;
+          });
+          forecastEl.innerHTML += `</ul>`;
+        } else {
+          forecastEl.innerHTML += `<p>Žádné planety nejsou aktuálně viditelné.</p>`;
+        }
+      } catch (error) {
+        console.error("Chyba při načítání dat o viditelných planetách:", error);
+      }
+    }
+
+    document.getElementById("forecastButton").addEventListener("click", getCoordinates);
+  </script>
+</body>
+</html>
