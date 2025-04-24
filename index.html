@@ -5,14 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Astronomická Předpověď</title>
   <style>
-    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
-    .forecast { margin-top: 20px; }
-    .day { background: #222; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
-    input, button { padding: 8px; margin-top: 10px; }
-    img.icon { vertical-align: middle; height: 40px; }
-    img.moon-icon { height: 80px; display: block; margin: 10px 0; }
-    #map { height: 150px; margin-top: 20px; border-radius: 8px; }
-    canvas { background: #222; border-radius: 8px; margin-top: 20px; width: 100%; height: 150px; }
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .forecast {
+      margin-top: 20px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .day {
+      background: #222;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+
+    input, button {
+      padding: 8px;
+      margin-top: 10px;
+    }
+
+    img.icon {
+      vertical-align: middle;
+      height: 40px;
+    }
+
+    #map {
+      height: 300px;
+      width: 400px;
+      margin: 20px auto;
+      border-radius: 8px;
+    }
+
+    canvas {
+      width: 400px !important;
+      height: 300px !important;
+      background: #222;
+      border-radius: 8px;
+      margin: 20px auto;
+      display: block;
+    }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
@@ -25,7 +65,7 @@
 
   <div id="forecast" class="forecast"></div>
   <div id="map"></div>
-  <canvas id="moonChart" width="400" height="200"></canvas>
+  <canvas id="moonChart" width="400" height="300"></canvas>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -43,21 +83,16 @@
 
     function translateMoonPhase(phase) {
       const phases = {
-        "NEW_MOON": "Nov",
-        "WAXING_CRESCENT": "Dorůstající srpek",
-        "FIRST_QUARTER": "První čtvrť",
-        "WAXING_GIBBOUS": "Dorůstající Měsíc",
-        "FULL_MOON": "Úplněk",
-        "WANING_GIBBOUS": "Couvající Měsíc",
-        "LAST_QUARTER": "Poslední čtvrť",
-        "WANING_CRESCENT": "Ubývající srpek"
+        "NEW_MOON": "Nov 🌑",
+        "WAXING_CRESCENT": "Dorůstající srpek 🌒",
+        "FIRST_QUARTER": "První čtvrť 🌓",
+        "WAXING_GIBBOUS": "Dorůstající Měsíc 🌔",
+        "FULL_MOON": "Úplněk 🌕",
+        "WANING_GIBBOUS": "Couvající Měsíc 🌖",
+        "LAST_QUARTER": "Poslední čtvrť 🌗",
+        "WANING_CRESCENT": "Ubývající srpek 🌘"
       };
       return phases[phase] || phase;
-    }
-
-    function getMoonImageUrl(phase) {
-      const kebab = phase.toLowerCase().replace(/_/g, "-");
-      return `https://raw.githubusercontent.com/mrgriscom/moon-phase-icons/main/png/phase-${kebab}.png`;
     }
 
     async function getCoordinates() {
@@ -123,13 +158,11 @@
         const rawPhase = data.moon_phase;
         const translatedPhase = translateMoonPhase(rawPhase);
         const illumination = Math.max(0, parseFloat(data.moon_illumination_percentage)) || 0;
-        const moonImage = getMoonImageUrl(rawPhase);
 
         moonInfo.innerHTML = `
           <p><strong>Fáze Měsíce:</strong> ${translatedPhase}</p>
           <p><strong>Osvětlení:</strong> ${illumination} %</p>
           <p><strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
-          <img class="moon-icon" src="${moonImage}" alt="${translatedPhase}">
           <p><strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p><strong>Západ Měsíce:</strong> ${data.moonset}</p>
         `;
