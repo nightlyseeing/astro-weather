@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Astronomická Předpověď</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
   <style>
     body {
       font-family: sans-serif;
@@ -31,15 +31,23 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
+      gap: 40px;
       align-items: flex-start;
     }
     .left-column, .right-column {
+      display: flex;
+      flex-direction: column;
       flex: 1 1 500px;
       max-width: 600px;
     }
     .forecast {
       margin-top: 0;
+    }
+    .forecast-title {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #ffd54f;
+      margin-bottom: 15px;
     }
     .day {
       background: #222;
@@ -73,25 +81,18 @@
       vertical-align: middle;
       height: 40px;
     }
-    #map {
+    #map, #lightPollutionMap {
       width: 100%;
       height: 450px;
       border-radius: 8px;
-      transition: margin-top 0.3s ease;
-    }
-    canvas {
-      width: 100% !important;
-      height: 450px !important;
-      background: #222;
-      border-radius: 8px;
-      margin-top: 20px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
   <h1>🌠 Astronomická Předpověď</h1>
   <div class="input-section">
-    <label for="city">Zadejte město:</label><br/>
+    <label for="city">Zadejte město:</label><br>
     <input type="text" id="city" placeholder="např. Praha">
     <button id="forecastButton">Zobrazit aktuální předpověď</button>
   </div>
@@ -101,31 +102,27 @@
     </div>
     <div class="right-column">
       <div id="map"></div>
-      <canvas id="moonChart" width="600" height="450"></canvas>
+      <div id="lightPollutionMap"></div>
     </div>
   </div>
   <div style="text-align:center; margin-top: 60px;">
     <p style="margin-bottom: 10px; font-size: 1.1em;">💖 Podpoř vývoj této aplikace</p>
     <a href="https://www.buymeacoffee.com/TVOJENICK" target="_blank">
-      <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Podpoř mě" style="height: 50px !important; width: 210px !important;" >
+      <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Podpoř mě" style="height: 50px !important; width: 210px !important;">
     </a>
   </div>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d";
     const moonApiKey = "781aa2d69af74745906e01cc68c84207";
-    let map, sunMarker, cachedClouds = null;
+    let map, pollutionMap, sunMarker, cachedClouds = null;
     let astronomicalTwilight = { begin: "", end: "" };
 
     function seeingQuality(clouds) {
       if (clouds < 15) return { label: "Výjimečně ideální podmínky 🌌", class: "seeing-ideal" };
       if (clouds < 50) return { label: "Průměrné podmínky 🌤️", class: "seeing-average" };
       return { label: "Nevhodné pro pozorování ☁️", class: "seeing-bad" };
-    }
-
-    function idealConditions(clouds, illumination) {
-      return clouds < 15 && illumination < 15;
     }
 
     async function getCoordinates() {
@@ -138,7 +135,7 @@
         const { lat, lon, name } = data[0];
         loadWeather(lat, lon, name);
         getMoonPhase(lat, lon);
-        showMap(lat, lon);
+        showMaps(lat, lon);
       } catch (error) {
         alert("Chyba při získávání souřadnic.");
         console.error(error);
@@ -158,8 +155,9 @@
         const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
         const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
         const forecastEl = document.getElementById("forecast");
-        forecastEl.innerHTML = `<h2>Předpověď pro ${name}</h2>
+        forecastEl.innerHTML = `
           <div class="day">
+            <div class="forecast-title">Předpověď pro ${name}</div>
             <h3>🌀 Aktuální počasí</h3>
             <p>🌤️ <strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
             <p>🌡️ <strong>Teplota:</strong> ${temperature}°C</p>
@@ -180,7 +178,6 @@
             <h3>🌕 Měsíc</h3>
             <div id="moonInfo"></div>
           </div>`;
-        alignMapToFirstDay();
       } catch (error) {
         alert("Chyba při načítání počasí.");
         console.error(error);
@@ -194,66 +191,33 @@
         astronomicalTwilight.begin = data.astronomical_twilight_begin;
         astronomicalTwilight.end = data.astronomical_twilight_end;
         const moonInfo = document.getElementById("moonInfo");
-        const illumination = Math.max(0, parseFloat(data.moon_illumination_percentage)) || 0;
         moonInfo.innerHTML = `
           <p>🌘 <strong>Fáze Měsíce:</strong> ${data.moon_phase}</p>
-          <p>💡 <strong>Osvětlení Měsíce:</strong> ${illumination} %</p>
+          <p>💡 <strong>Osvětlení Měsíce:</strong> ${data.moon_illumination_percentage} %</p>
           <p>📏 <strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
           <p>🌙 <strong>Východ Měsíce:</strong> ${data.moonrise}</p>
           <p>🌒 <strong>Západ Měsíce:</strong> ${data.moonset}</p>`;
-        if (cachedClouds !== null && idealConditions(cachedClouds, illumination)) {
-          document.getElementById("seeingBlock").innerHTML += `<p class="highlight">✅ Výjimečně ideální podmínky pro pozorování!</p>`;
-        }
-        drawIlluminationChart([illumination - 15, illumination - 10, illumination - 5, illumination, illumination - 3, illumination + 2, illumination]);
       } catch (error) {
         console.error("Chyba při načítání Měsíce:", error);
       }
     }
 
-    function drawIlluminationChart(dataPoints) {
-      const ctx = document.getElementById("moonChart").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: ["-6 dní", "-5", "-4", "Dnes", "-2", "-1", "Zítra"],
-          datasets: [{
-            label: "Osvětlení Měsíce (%)",
-            data: dataPoints,
-            borderColor: "lightblue",
-            backgroundColor: "rgba(173, 216, 230, 0.2)"
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              suggestedMin: 0,
-              suggestedMax: 100
-            }
-          }
-        }
-      });
-    }
-
-    function showMap(lat, lon) {
+    function showMaps(lat, lon) {
       if (!map) {
         map = L.map("map").setView([lat, lon], 7);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
         sunMarker = L.marker([lat, lon]).addTo(map).bindPopup("Tvoje poloha");
+
+        pollutionMap = L.map("lightPollutionMap").setView([lat, lon], 7);
+        L.tileLayer("https://tiles.lightpollutionmap.info/tiles/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.lightpollutionmap.info/">LightPollutionMap.info</a>',
+          maxZoom: 12,
+          tileSize: 256
+        }).addTo(pollutionMap);
       } else {
         map.setView([lat, lon], 7);
         sunMarker.setLatLng([lat, lon]);
-      }
-    }
-
-    function alignMapToFirstDay() {
-      const firstDay = document.querySelector(".left-column .day");
-      const mapEl = document.getElementById("map");
-      if (firstDay && mapEl) {
-        const leftTop = firstDay.getBoundingClientRect().top;
-        const rightTop = document.querySelector(".right-column").getBoundingClientRect().top;
-        const offset = leftTop - rightTop;
-        mapEl.style.marginTop = `${offset}px`;
+        pollutionMap.setView([lat, lon], 7);
       }
     }
 
