@@ -256,14 +256,28 @@ function showMap(lat, lon) {
 }
 
 document.getElementById("forecastButton").addEventListener("click", getCoordinates);
+
 document.getElementById("gpsButton").addEventListener("click", () => {
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
+    navigator.geolocation.getCurrentPosition(async position => {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
-      loadWeather(lat, lon, "Tvoje poloha");
-      getMoonPhase(lat, lon);
-      showMap(lat, lon);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const data = await res.json();
+        if (data.address && data.address.city) {
+          document.getElementById("city").value = data.address.city;
+        } else if (data.address && data.address.town) {
+          document.getElementById("city").value = data.address.town;
+        } else if (data.address && data.address.village) {
+          document.getElementById("city").value = data.address.village;
+        } else {
+          document.getElementById("city").value = `${lat},${lon}`;
+        }
+      } catch (error) {
+        alert("Chyba při získávání názvu místa.");
+        console.error(error);
+      }
     }, () => {
       alert("Nepodařilo se získat polohu.");
     });
