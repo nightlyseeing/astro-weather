@@ -46,11 +46,11 @@
     button#gpsButton svg {
       width: 36px;
       height: 36px;
-      fill: #3399ff; /* modrá */
+      fill: #3399ff;
       transition: fill 0.3s ease, transform 0.6s ease;
     }
     button#gpsButton:hover svg {
-      fill: #66ccff; /* světlejší modrá při hoveru */
+      fill: #66ccff;
       transform: scale(1.2);
       animation: pulse 1.2s infinite;
     }
@@ -156,7 +156,6 @@
   <div class="input-row">
     <input type="text" id="city" placeholder="např. Praha">
     <button id="gpsButton" title="Použít mou polohu">
-      <!-- SVG ikona místo emoji 📍 -->
       <svg viewBox="0 0 24 24">
         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/>
       </svg>
@@ -185,14 +184,7 @@
 <script>
 const weatherApiKey = "365461721d8f9f7caa7c1460f8181f3d";
 const moonApiKey = "781aa2d69af74745906e01cc68c84207";
-let map, sunMarker, cachedClouds = null;
-let astronomicalTwilight = { begin: "", end: "" };
-
-function seeingQuality(clouds) {
-  if (clouds < 15) return { label: "Výjimečně ideální podmínky 🌌", class: "seeing-ideal" };
-  if (clouds < 50) return { label: "Průměrné podmínky ⛅️", class: "seeing-average" };
-  return { label: "Nevhodné pro pozorování ☁️", class: "seeing-bad" };
-}
+let map, sunMarker;
 
 async function getCoordinates() {
   const city = document.getElementById("city").value.trim();
@@ -202,8 +194,9 @@ async function getCoordinates() {
     const data = await res.json();
     if (!data[0]) return alert("Město nenalezeno");
     const { lat, lon, name } = data[0];
-    loadWeather(lat, lon, name);
-    getMoonPhase(lat, lon);
+    const weather = await loadWeather(lat, lon, name);
+    const moon = await getMoonPhase(lat, lon);
+    drawForecast(weather, moon);
     showMap(lat, lon);
   } catch (error) {
     alert("Chyba při získávání souřadnic.");
@@ -212,63 +205,61 @@ async function getCoordinates() {
 }
 
 async function loadWeather(lat, lon, name) {
-  try {
-    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`);
-    const data = await res.json();
-    const weather = data.weather[0].description;
-    const icon = data.weather[0].icon;
-    const temperature = data.main.temp;
-    const clouds = data.clouds.all;
-    cachedClouds = clouds;
-    const seeing = seeingQuality(clouds);
-    const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
-    const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' });
-    const forecastEl = document.getElementById("forecast");
-    forecastEl.innerHTML = `
-      <div class="day">
-        <div class="forecast-title">Předpověď pro ${name}</div>
-        <h3>🌀 Aktuální počasí</h3>
-        <p>🌤️ <strong>Počasí:</strong> ${weather} <img class="icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${weather}"></p>
-        <p>🌡️ <strong>Teplota:</strong> ${temperature}°C</p>
-        <p>☁️ <strong>Oblačnost:</strong> ${clouds}%</p>
-      </div>
-      <div id="seeingBlock" class="day">
-        <h3>🔭 Seeing</h3>
-        <p class="seeing-result ${seeing.class}">👁️ <strong>${seeing.label}</strong></p>
-      </div>
-      <div class="day">
-        <h3>☀️ Slunce</h3>
-        <p>🌅 <strong>Východ slunce:</strong> ${sunrise}</p>
-        <p>🌇 <strong>Západ slunce:</strong> ${sunset}</p>
-        <p>🔗 <strong>Začátek tmy:</strong> ${astronomicalTwilight.end}</p>
-        <p>🌅 <strong>Konec tmy:</strong> ${astronomicalTwilight.begin}</p>
-      </div>
-      <div class="day">
-        <h3>🌕 Měsíc</h3>
-        <div id="moonInfo"></div>
-      </div>`;
-  } catch (error) {
-    alert("Chyba při načítání počasí.");
-    console.error(error);
-  }
+  const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric&lang=cz`);
+  const data = await res.json();
+  return {
+    name: name,
+    weather: data.weather[0].description,
+    icon: data.weather[0].icon,
+    temperature: data.main.temp,
+    clouds: data.clouds.all,
+    sunrise: new Date(data.sys.sunrise * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' }),
+    sunset: new Date(data.sys.sunset * 1000).toLocaleTimeString("cs-CZ", { hour: '2-digit', minute: '2-digit' }),
+  };
 }
 
 async function getMoonPhase(lat, lon) {
-  try {
-    const res = await fetch(`https://api.ipgeolocation.io/astronomy?apiKey=${moonApiKey}&lat=${lat}&long=${lon}`);
-    const data = await res.json();
-    astronomicalTwilight.begin = data.astronomical_twilight_begin;
-    astronomicalTwilight.end = data.astronomical_twilight_end;
-    const moonInfo = document.getElementById("moonInfo");
-    moonInfo.innerHTML = `
-      <p>🌘 <strong>Fáze Měsíce:</strong> ${data.moon_phase}</p>
-      <p>💡 <strong>Osvětlení Měsíce:</strong> ${data.moon_illumination_percentage} %</p>
-      <p>📏 <strong>Vzdálenost od Země:</strong> ${data.moon_distance} km</p>
-      <p>🌙 <strong>Východ Měsíce:</strong> ${data.moonrise}</p>
-      <p>🌒 <strong>Západ Měsíce:</strong> ${data.moonset}</p>`;
-  } catch (error) {
-    console.error("Chyba při načítání Měsíce:", error);
-  }
+  const res = await fetch(`https://api.ipgeolocation.io/astronomy?apiKey=${moonApiKey}&lat=${lat}&long=${lon}`);
+  return await res.json();
+}
+
+function drawForecast(weather, moon) {
+  const seeing = seeingQuality(weather.clouds);
+  document.getElementById("forecast").innerHTML = `
+    <div class="day">
+      <div class="forecast-title">Předpověď pro ${weather.name}</div>
+      <h3>🌀 Aktuální počasí</h3>
+      <p>🌤️ <strong>Počasí:</strong> ${weather.weather} <img class="icon" src="https://openweathermap.org/img/wn/${weather.icon}@2x.png" alt="${weather.weather}"></p>
+      <p>🌡️ <strong>Teplota:</strong> ${weather.temperature}°C</p>
+      <p>☁️ <strong>Oblačnost:</strong> ${weather.clouds}%</p>
+    </div>
+    <div id="seeingBlock" class="day">
+      <h3>🔭 Seeing</h3>
+      <p class="seeing-result ${seeing.class}">👁️ <strong>${seeing.label}</strong></p>
+    </div>
+    <div class="day">
+      <h3>☀️ Slunce</h3>
+      <p>🌅 <strong>Východ slunce:</strong> ${weather.sunrise}</p>
+      <p>🌇 <strong>Západ slunce:</strong> ${weather.sunset}</p>
+      <p>🔗 <strong>Začátek tmy:</strong> ${moon.astronomical_twilight_begin}</p>
+      <p>🌙 <strong>Konec tmy:</strong> ${moon.astronomical_twilight_end}</p>
+    </div>
+    <div class="day">
+      <h3>🌕 Měsíc</h3>
+      <div id="moonInfo">
+        <p>🌘 <strong>Fáze Měsíce:</strong> ${moon.moon_phase}</p>
+        <p>💡 <strong>Osvětlení Měsíce:</strong> ${moon.moon_illumination_percentage}%</p>
+        <p>📏 <strong>Vzdálenost od Země:</strong> ${moon.moon_distance} km</p>
+        <p>🌙 <strong>Východ Měsíce:</strong> ${moon.moonrise}</p>
+        <p>🌒 <strong>Západ Měsíce:</strong> ${moon.moonset}</p>
+      </div>
+    </div>`;
+}
+
+function seeingQuality(clouds) {
+  if (clouds < 15) return { label: "Výjimečně ideální podmínky 🌌", class: "seeing-ideal" };
+  if (clouds < 50) return { label: "Průměrné podmínky ⛅️", class: "seeing-average" };
+  return { label: "Nevhodné pro pozorování ☁️", class: "seeing-bad" };
 }
 
 function showMap(lat, lon) {
@@ -286,7 +277,6 @@ function showMap(lat, lon) {
 }
 
 document.getElementById("forecastButton").addEventListener("click", getCoordinates);
-
 document.getElementById("gpsButton").addEventListener("click", () => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(async position => {
@@ -295,22 +285,15 @@ document.getElementById("gpsButton").addEventListener("click", () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
         const data = await res.json();
-        if (data.address && data.address.city) {
-          document.getElementById("city").value = data.address.city;
-        } else if (data.address && data.address.town) {
-          document.getElementById("city").value = data.address.town;
-        } else if (data.address && data.address.village) {
-          document.getElementById("city").value = data.address.village;
-        } else {
-          document.getElementById("city").value = `${lat},${lon}`;
-        }
+        if (data.address.city) document.getElementById("city").value = data.address.city;
+        else if (data.address.town) document.getElementById("city").value = data.address.town;
+        else if (data.address.village) document.getElementById("city").value = data.address.village;
+        else document.getElementById("city").value = `${lat},${lon}`;
       } catch (error) {
         alert("Chyba při získávání názvu místa.");
         console.error(error);
       }
-    }, () => {
-      alert("Nepodařilo se získat polohu.");
-    });
+    }, () => alert("Nepodařilo se získat polohu."));
   } else {
     alert("Geolokace není podporována tímto prohlížečem.");
   }
