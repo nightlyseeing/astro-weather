@@ -238,6 +238,18 @@ function drawForecast(weather, moon) {
       <p class="seeing-result ${seeing.class}">👁️ <strong>${seeing.label}</strong></p>
     </div>
     <div class="day">
+      <h3>🔎 Co pozorovat dnes</h3>
+      <p>✨ <strong>Doporučení:</strong> ${
+        weather.clouds < 30 
+          ? "Skvělé podmínky na sledování hvězd a Měsíce!" 
+          : weather.clouds < 60 
+            ? "Možná něco zahlédneš, ale počítej s oblačností." 
+            : "Dnes spíše vhodné pro sledování planet pomocí dalekohledu."
+      }</p>
+      <p>🌓 <strong>Fáze Měsíce:</strong> ${moon.moon_phase}</p>
+      <p>🌌 <strong>Viditelnost Mléčné dráhy:</strong> ${weather.clouds < 20 ? "Výborná" : "Slabší"}</p>
+    </div>
+    <div class="day">
       <h3>☀️ Slunce</h3>
       <p>🌅 <strong>Východ slunce:</strong> ${weather.sunrise}</p>
       <p>🌇 <strong>Západ slunce:</strong> ${weather.sunset}</p>
