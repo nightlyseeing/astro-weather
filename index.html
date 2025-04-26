@@ -31,15 +31,34 @@
       margin-top: 10px;
       margin-bottom: 10px;
     }
-    input, button {
-      padding: 12px 16px;
-      font-size: 1.1em;
-    }
     input#city {
       width: 250px;
+      font-size: 1.1em;
+      padding: 12px 16px;
     }
-    #forecastButton, #gpsButton {
+    button#gpsButton {
+      background: none;
+      border: none;
       cursor: pointer;
+      font-size: 1.8em;
+      color: #00cc66; /* zelená */
+      transition: color 0.3s ease, transform 0.6s ease;
+    }
+    button#gpsButton:hover {
+      color: #66ccff; /* modrá při hoveru */
+      transform: scale(1.2);
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1.2); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1.2); }
+    }
+    button#forecastButton {
+      padding: 12px 16px;
+      font-size: 1.1em;
+      cursor: pointer;
+      margin-top: 10px;
     }
     .container {
       display: flex;
@@ -102,7 +121,6 @@
       margin-bottom: 20px;
       align-self: center;
     }
-
     @media (max-width: 768px) {
       #map {
         width: 100%;
@@ -127,11 +145,12 @@
 <body>
 
 <h1>🌠 Astronomická Předpověď</h1>
+
 <div class="input-section">
   <label for="city">Zadejte město:</label><br>
   <div class="input-row">
     <input type="text" id="city" placeholder="např. Praha">
-    <button id="gpsButton">📍 Použít mou polohu</button>
+    <button id="gpsButton" title="Použít mou polohu">📍</button>
   </div>
   <button id="forecastButton">Zobrazit aktuální předpověď</button>
 </div>
