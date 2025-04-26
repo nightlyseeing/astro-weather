@@ -104,11 +104,6 @@
       padding: 8px 10px;
       border-radius: 6px;
     }
-    .highlight {
-      background-color: #2e7d32 !important;
-      color: #b9f6ca;
-      font-weight: bold;
-    }
     .seeing-result {
       font-weight: bold;
     }
@@ -225,6 +220,43 @@ async function getMoonPhase(lat, lon) {
 
 function drawForecast(weather, moon) {
   const seeing = seeingQuality(weather.clouds);
+  
+  const now = new Date();
+  const moonrise = new Date(`${now.toISOString().split('T')[0]}T${moon.moonrise}`);
+  const moonset = new Date(`${now.toISOString().split('T')[0]}T${moon.moonset}`);
+  const nightBegin = new Date(`${now.toISOString().split('T')[0]}T${moon.astronomical_twilight_begin}`);
+  const nightEnd = new Date(`${now.toISOString().split('T')[0]}T${moon.astronomical_twilight_end}`);
+
+  let moonVisible = false;
+  if (moon.moonrise && moon.moonset) {
+    if (moonrise < moonset) {
+      moonVisible = now >= moonrise && now <= moonset;
+    } else {
+      moonVisible = now >= moonrise || now <= moonset;
+    }
+  }
+
+  const planets = [
+    { name: "Jupiter", visible: true },
+    { name: "Saturn", visible: true },
+    { name: "Mars", visible: true },
+    { name: "Venuše", visible: false },
+    { name: "Merkur", visible: false }
+  ];
+  const visiblePlanets = planets.filter(p => p.visible).map(p => p.name).join(", ");
+  const milkyWayVisible = weather.clouds < 20 && (now >= nightBegin && now <= nightEnd);
+
+  let observeSuggestion = "";
+  if (weather.clouds < 30) {
+    observeSuggestion = moonVisible 
+      ? "Skvělé podmínky na sledování hvězd a Měsíce!" 
+      : "Skvělé podmínky na sledování hvězd! (Měsíc není nad obzorem)";
+  } else if (weather.clouds < 60) {
+    observeSuggestion = "Možná něco zahlédneš, ale počítej s oblačností.";
+  } else {
+    observeSuggestion = "Dnes spíše vhodné pro sledování planet pomocí dalekohledu.";
+  }
+
   document.getElementById("forecast").innerHTML = `
     <div class="day">
       <div class="forecast-title">Předpověď pro ${weather.name}</div>
@@ -239,15 +271,11 @@ function drawForecast(weather, moon) {
     </div>
     <div class="day">
       <h3>🔎 Co pozorovat dnes</h3>
-      <p>✨ <strong>Doporučení:</strong> ${
-        weather.clouds < 30 
-          ? "Skvělé podmínky na sledování hvězd a Měsíce!" 
-          : weather.clouds < 60 
-            ? "Možná něco zahlédneš, ale počítej s oblačností." 
-            : "Dnes spíše vhodné pro sledování planet pomocí dalekohledu."
-      }</p>
+      <p>✨ <strong>Doporučení:</strong> ${observeSuggestion}</p>
+      <p>🪐 <strong>Planety viditelné v noci:</strong> ${visiblePlanets}</p>
+      <p>🌕 <strong>Měsíc:</strong> ${moonVisible ? "nad obzorem" : "není viditelný"}</p>
+      <p>🌌 <strong>Mléčná dráha:</strong> ${milkyWayVisible ? "Výborná viditelnost" : "Špatná viditelnost"}</p>
       <p>🌓 <strong>Fáze Měsíce:</strong> ${moon.moon_phase}</p>
-      <p>🌌 <strong>Viditelnost Mléčné dráhy:</strong> ${weather.clouds < 20 ? "Výborná" : "Slabší"}</p>
     </div>
     <div class="day">
       <h3>☀️ Slunce</h3>
